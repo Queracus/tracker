@@ -56,6 +56,8 @@ input[type="number"] {
   border: 2px solid #dfe1e6;
   border-radius: 3px;
   outline: none;
+  background-color: #fafbfc;
+  color: #172b4d;
 }
 input[type="number"]:focus {
   border-color: #0079bf;
@@ -101,4 +103,38 @@ input[type="number"]:focus {
 }
 .hidden {
   display: none;
+}
+
+/* --- Dark Mode Styles --- */
+/* These styles will only apply when Trello is in Dark Mode */
+
+.body-color-theme-dark {
+  color: #b6c2cf;
+}
+
+.body-color-theme-dark .progress-text {
+  color: #9fadbc;
+}
+
+.body-color-theme-dark .progress-bar-bg {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.body-color-theme-dark input[type="number"] {
+  background-color: #22272b;
+  border-color: #41474d;
+  color: #b6c2cf;
+}
+
+.body-color-theme-dark input[type="number"]:focus {
+  border-color: #0079bf;
+}
+
+.body-color-theme-dark .btn-secondary {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #b6c2cf;
+}
+
+.body-color-theme-dark .btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.15);
 }
