@@ -6,9 +6,9 @@
     <script src="https://p.trellocdn.com/power-up.min.js"></script>
   </head>
   <body>
-    <!-- Progress Bar / Slider -->
-    <div class="progress-container">
-      <span class="progress-text" id="progress-text">0%</span>
+    <!-- Progress Bar / Slider (Moved text above bar) -->
+    <div class="progress-section">
+      <div class="progress-text" id="progress-text">0%</div>
       <input
         type="range"
         min="0"
@@ -23,7 +23,7 @@
     <div class="tracker-controls">
       <div class="row">
         <label>Elapsed Time:</label>
-        <span id="elapsed-time">00:00</span>
+        <span id="elapsed-time">00:00:00:00</span>
       </div>
       <div class="row">
         <label>Estimated Time (minutes):</label>

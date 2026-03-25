@@ -1,6 +1,6 @@
 var t = window.TrelloPowerUp.iframe();
 
-// --- UI Elements (more added) ---
+// UI Elements
 var startBtn = document.getElementById("start-btn");
 var stopBtn = document.getElementById("stop-btn");
 var resetBtn = document.getElementById("reset-btn");
@@ -16,40 +16,34 @@ var logContainer = document.getElementById("time-log-container");
 
 var timerInterval;
 
-// --- Helper Functions ---
-
-/**
- * Formats milliseconds into a MM:SS string.
- * @param {number} ms - The total milliseconds.
- * @returns {string} The formatted time string.
- */
+// Format into DD:HH:MM:SS
 function formatTime(ms) {
-  var totalSeconds = Math.floor(ms / 1000);
-  var minutes = Math.floor(totalSeconds / 60);
+  var safeMs = Math.max(0, ms);
+  var totalSeconds = Math.floor(safeMs / 1000);
+  var days = Math.floor(totalSeconds / 86400);
+  var hours = Math.floor((totalSeconds % 86400) / 3600);
+  var minutes = Math.floor((totalSeconds % 3600) / 60);
   var seconds = totalSeconds % 60;
+
   return (
-    String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0")
+    String(days).padStart(2, "0") +
+    ":" +
+    String(hours).padStart(2, "0") +
+    ":" +
+    String(minutes).padStart(2, "0") +
+    ":" +
+    String(seconds).padStart(2, "0")
   );
 }
 
-/**
- * Styles the slider's background to act as a progress bar.
- * @param {number} percentage - The current progress percentage.
- */
 function styleSlider(percentage) {
   var isDark = document.body.classList.contains("dark-mode");
   var fillColor = percentage > 100 ? "#eb5a46" : "#61bd4f";
   var bgColor = isDark ? "#41474d" : "#dfe1e6";
-
   var fillPercentage = Math.min(percentage, 100);
   progressSlider.style.background = `linear-gradient(to right, ${fillColor} ${fillPercentage}%, ${bgColor} ${fillPercentage}%)`;
 }
 
-/**
- * Formats an ISO date string into a more readable local format.
- * @param {string} isoString - The date string to format.
- * @returns {string} The formatted date string.
- */
 function formatLogDate(isoString) {
   if (!isoString) return "N/A";
   return new Date(isoString).toLocaleString(navigator.language, {
@@ -61,93 +55,88 @@ function formatLogDate(isoString) {
   });
 }
 
-/**
- * Converts milliseconds into a "Xh Ym" formatted string.
- * @param {number} ms - The total milliseconds.
- * @returns {string} The formatted duration string.
- */
 function millisecondsToHms(ms) {
-  var secs = Math.floor(ms / 1000);
+  var secs = Math.floor(Math.max(0, ms) / 1000);
   var hrs = Math.floor(secs / 3600);
   secs %= 3600;
   var mins = Math.floor(secs / 60);
   return `${hrs}h ${mins}m`;
 }
 
-// --- Main Render Function ---
-
-/**
- * Renders the entire UI based on data from Trello.
- */
+// Renders the entire UI
 function render() {
-  return t.getAll().then(function (data) {
-    var cardData = data.card?.shared || {};
-    var memberRole = t.getContext().member.role; // 'admin', 'normal', or 'observer'
-    var isAdmin = memberRole === "admin";
+  // Use t.memberCanWriteToModel — no board() permission needed
+  return Promise.all([t.getAll(), t.memberCanWriteToModel("card")]).then(
+    function (results) {
+      var cardData = results[0].card?.shared || {};
+      var canWrite = results[1];
 
-    // Enable/disable admin controls based on role
-    estimatedInput.disabled = !isAdmin;
-    resetBtn.disabled = !isAdmin;
+      // Treat write permission as proxy for admin/member (non-observers can write)
+      // For stricter admin-only: fall back to checking board memberships if needed,
+      // but memberCanWriteToModel works for the vast majority of real use cases.
+      var isAdmin = canWrite;
 
-    var estimated = cardData.estimated || 0;
-    var timeLog = cardData.timeLog || [];
-    var isRunning = cardData.isRunning || false;
-    var startTime = cardData.startTime || 0;
+      estimatedInput.disabled = !isAdmin;
+      resetBtn.disabled = !isAdmin;
 
-    // Calculate total elapsed time by summing up all entries in the log
-    var totalElapsed = timeLog.reduce(
-      (acc, entry) =>
-        acc + (new Date(entry.end).getTime() - new Date(entry.start).getTime()),
-      0,
-    );
+      var estimated = cardData.estimated || 0;
+      var timeLog = cardData.timeLog || [];
+      var isRunning = cardData.isRunning || false;
+      var startTime = cardData.startTime || 0;
 
-    if (isRunning) {
-      totalElapsed += Date.now() - startTime;
-      startBtn.classList.add("hidden");
-      stopBtn.classList.remove("hidden");
-    } else {
-      startBtn.classList.remove("hidden");
-      stopBtn.classList.add("hidden");
-    }
+      var totalElapsed = timeLog.reduce(
+        (acc, entry) =>
+          acc +
+          (new Date(entry.end).getTime() - new Date(entry.start).getTime()),
+        0,
+      );
 
-    estimatedInput.value = estimated > 0 ? estimated : "";
-    elapsedDisplay.innerText = formatTime(totalElapsed);
+      if (isRunning) {
+        totalElapsed += Date.now() - startTime;
+        startBtn.classList.add("hidden");
+        stopBtn.classList.remove("hidden");
+      } else {
+        startBtn.classList.remove("hidden");
+        stopBtn.classList.add("hidden");
+      }
 
-    var estimatedMs = estimated * 60 * 1000;
-    var percentage =
-      estimatedMs > 0 ? Math.floor((totalElapsed / estimatedMs) * 100) : 0;
+      estimatedInput.value = estimated > 0 ? estimated : "";
+      elapsedDisplay.innerText = formatTime(totalElapsed);
 
-    progressText.innerText = percentage + "%";
-    progressSlider.value = Math.min(percentage, 100);
-    styleSlider(percentage);
-    progressSlider.disabled = estimated <= 0;
+      var estimatedMs = estimated * 60 * 1000;
+      var percentage =
+        estimatedMs > 0 ? Math.floor((totalElapsed / estimatedMs) * 100) : 0;
 
-    // Render the Time Log display
-    logContainer.innerHTML = ""; // Clear previous entries
-    if (timeLog.length === 0) {
-      logContainer.innerHTML = "<p>No time entries yet.</p>";
-    } else {
-      timeLog
-        .slice()
-        .reverse()
-        .forEach((entry) => {
-          // Show newest entries first
-          var durationMs =
-            new Date(entry.end).getTime() - new Date(entry.start).getTime();
-          var entryEl = document.createElement("div");
-          entryEl.className = "log-entry";
-          entryEl.innerHTML = `
-                    <span class="log-duration">${millisecondsToHms(durationMs)} (${entry.type})</span>
-                    <span>Start: ${formatLogDate(entry.start)}</span>
-                    <span>End: ${formatLogDate(entry.end)}</span>
-                `;
-          logContainer.appendChild(entryEl);
-        });
-    }
-  });
+      progressText.innerText = percentage + "%";
+      progressSlider.value = Math.min(percentage, 100);
+      styleSlider(percentage);
+      progressSlider.disabled = estimated <= 0;
+
+      logContainer.innerHTML = "";
+      if (timeLog.length === 0) {
+        logContainer.innerHTML = "<p>No time entries yet.</p>";
+      } else {
+        timeLog
+          .slice()
+          .reverse()
+          .forEach((entry) => {
+            var durationMs =
+              new Date(entry.end).getTime() - new Date(entry.start).getTime();
+            var entryEl = document.createElement("div");
+            entryEl.className = "log-entry";
+            entryEl.innerHTML = `
+            <span class="log-duration">${millisecondsToHms(durationMs)} (${entry.type})</span>
+            <span>Start: ${formatLogDate(entry.start)}</span>
+            <span>End: ${formatLogDate(entry.end)}</span>
+          `;
+            logContainer.appendChild(entryEl);
+          });
+      }
+    },
+  );
 }
 
-// --- Event Listeners ---
+// EVENT LISTENERS
 estimatedInput.addEventListener("change", function () {
   t.set("card", "shared", "estimated", parseInt(this.value) || 0).then(render);
 });
@@ -164,13 +153,11 @@ startBtn.addEventListener("click", function () {
 stopBtn.addEventListener("click", function () {
   t.get("card", "shared").then(function (cardData) {
     var log = cardData.timeLog || [];
-    var newEntry = {
+    log.push({
       start: new Date(cardData.startTime).toISOString(),
       end: new Date().toISOString(),
       type: "timer",
-    };
-    log.push(newEntry);
-    // Persist the new log entry and stop the timer
+    });
     t.set("card", "shared", {
       isRunning: false,
       startTime: 0,
@@ -183,7 +170,6 @@ stopBtn.addEventListener("click", function () {
 });
 
 resetBtn.addEventListener("click", function () {
-  // Clear all tracking data for the card
   t.set("card", "shared", { isRunning: false, startTime: 0, timeLog: [] }).then(
     () => {
       stopTimerLoop();
@@ -192,6 +178,7 @@ resetBtn.addEventListener("click", function () {
   );
 });
 
+// Manual Log Entry
 addManualBtn.addEventListener("click", function () {
   var startVal = startTimeManual.value;
   var endVal = endTimeManual.value;
@@ -212,7 +199,6 @@ addManualBtn.addEventListener("click", function () {
       end: new Date(endVal).toISOString(),
       type: "manual",
     });
-    // Save the updated log
     t.set("card", "shared", "timeLog", timeLog).then(() => {
       startTimeManual.value = "";
       endTimeManual.value = "";
@@ -226,13 +212,48 @@ addManualBtn.addEventListener("click", function () {
   });
 });
 
+// 'change' fires when mouse is released — saves only then
+progressSlider.addEventListener("change", function () {
+  var percentage = parseInt(this.value);
+  t.get("card", "shared").then(function (cardData) {
+    var estimated = cardData.estimated || 0;
+    if (estimated <= 0) return;
+
+    var estimatedMs = estimated * 60 * 1000;
+    var targetElapsedMs = (estimatedMs * percentage) / 100;
+    var timeLog = cardData.timeLog || [];
+
+    var currentElapsed = timeLog.reduce(
+      (acc, entry) =>
+        acc + (new Date(entry.end).getTime() - new Date(entry.start).getTime()),
+      0,
+    );
+    var difference = targetElapsedMs - currentElapsed;
+
+    if (difference !== 0) {
+      var now = new Date();
+      timeLog.push({
+        start: new Date(now.getTime() - difference).toISOString(),
+        end: now.toISOString(),
+        type: "slider-adjustment",
+      });
+      t.set("card", "shared", { timeLog: timeLog, isRunning: false }).then(
+        function () {
+          stopTimerLoop();
+          render();
+        },
+      );
+    }
+  });
+});
+
 toggleLogBtn.addEventListener("click", function () {
   var isHidden = logContainer.classList.toggle("hidden");
   toggleLogBtn.innerText = isHidden ? "Show Time Log" : "Hide Time Log";
-  t.sizeTo("body"); // Resize iframe to fit content
+  t.sizeTo("body");
 });
 
-// --- Timer Loop & Initial Setup ---
+// Timer Loop
 function startTimerLoop() {
   if (!timerInterval) {
     timerInterval = setInterval(render, 1000);
@@ -245,14 +266,11 @@ function stopTimerLoop() {
 
 t.render(function () {
   var context = t.getContext();
-  if (context && context.theme === "dark") {
+  if (context && context.theme === "dark")
     document.body.classList.add("dark-mode");
-  }
+
   t.get("card", "shared", "isRunning").then((isRunning) => {
     if (isRunning) startTimerLoop();
-    render().then(() => {
-      // Resize iframe to fit all the new content
-      t.sizeTo("body");
-    });
+    render().then(() => t.sizeTo("body"));
   });
 });

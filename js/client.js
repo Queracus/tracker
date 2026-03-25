@@ -2,9 +2,8 @@
 function createProgressBarIcon(percentage) {
   var w = 40;
   var h = 14;
-  // --- Cap the visual fill width at 100% ---
   var fillW = Math.round((Math.min(percentage, 100) / 100) * w);
-  var fillColor = percentage > 100 ? "#eb5a46" : "#61bd4f"; // Red if > 100, else Green
+  var fillColor = percentage > 100 ? "#eb5a46" : "#61bd4f";
 
   var svg =
     '<svg width="' +
@@ -28,22 +27,32 @@ function createProgressBarIcon(percentage) {
 window.TrelloPowerUp.initialize({
   "card-badges": function (t, options) {
     return t.get("card", "shared").then(function (data) {
-      if (!data || !data.estimated || !data.elapsed) return [];
+      if (!data || !data.estimated || data.estimated <= 0) return [];
+
+      var timeLog = data.timeLog || [];
+      var isRunning = data.isRunning || false;
+      var startTime = data.startTime || 0;
+
+      // Compute total elapsed from the log entries
+      var totalElapsed = timeLog.reduce(function (acc, entry) {
+        return (
+          acc +
+          (new Date(entry.end).getTime() - new Date(entry.start).getTime())
+        );
+      }, 0);
+
+      // If the timer is currently running, add live time since startTime
+      if (isRunning && startTime) {
+        totalElapsed += Date.now() - startTime;
+      }
 
       var estimatedMs = data.estimated * 60 * 1000;
-      var percentage = 0;
-      if (estimatedMs > 0) {
-        // --- Removed the cap at 100% ---
-        percentage = Math.floor((data.elapsed / estimatedMs) * 100);
-      } else {
-        return [];
-      }
+      var percentage = Math.floor((totalElapsed / estimatedMs) * 100);
 
       return [
         {
           icon: createProgressBarIcon(percentage),
           text: percentage + "%",
-          // --- Dynamically set color based on overage ---
           color: percentage > 100 ? "red" : "green",
         },
       ];
