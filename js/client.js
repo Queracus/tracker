@@ -2,7 +2,10 @@
 function createProgressBarIcon(percentage) {
   var w = 40;
   var h = 14;
-  var fillW = Math.round((percentage / 100) * w);
+  // --- Cap the visual fill width at 100% ---
+  var fillW = Math.round((Math.min(percentage, 100) / 100) * w);
+  var fillColor = percentage > 100 ? "#eb5a46" : "#61bd4f"; // Red if > 100, else Green
+
   var svg =
     '<svg width="' +
     w +
@@ -16,40 +19,45 @@ function createProgressBarIcon(percentage) {
     fillW +
     '" height="' +
     h +
-    '" fill="#61bd4f" rx="3"/></svg>';
+    '" fill="' +
+    fillColor +
+    '" rx="3"/></svg>';
   return "data:image/svg+xml;base64," + btoa(svg);
 }
 
 window.TrelloPowerUp.initialize({
-  // 1. Show badges on the front of the cards (List view)
   "card-badges": function (t, options) {
     return t.get("card", "shared").then(function (data) {
       if (!data || !data.estimated || !data.elapsed) return [];
 
-      // Calculate progress percentage
-      var estimatedMs = data.estimated * 60 * 1000; // stored in minutes
-      var percentage = Math.floor((data.elapsed / estimatedMs) * 100);
-      if (percentage > 100) percentage = 100;
+      var estimatedMs = data.estimated * 60 * 1000;
+      var percentage = 0;
+      if (estimatedMs > 0) {
+        // --- Removed the cap at 100% ---
+        percentage = Math.floor((data.elapsed / estimatedMs) * 100);
+      } else {
+        return [];
+      }
 
       return [
         {
           icon: createProgressBarIcon(percentage),
           text: percentage + "%",
-          color: "green",
+          // --- Dynamically set color based on overage ---
+          color: percentage > 100 ? "red" : "green",
         },
       ];
     });
   },
 
-  // 2. Add our custom section to the back of the card
   "card-back-section": function (t, options) {
     return {
       title: "Time & Progress Tracker",
       icon: "https://img.icons8.com/ios-glyphs/30/737A8C/time.png",
       content: {
         type: "iframe",
-        url: t.signUrl("./card-back.html"),
-        height: 250, // Initial height of our iframe
+        url: t.signUrl("./card-back.html", { bust: Date.now() }),
+        height: 250,
       },
     };
   },

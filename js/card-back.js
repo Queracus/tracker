@@ -7,9 +7,10 @@ var resetBtn = document.getElementById("reset-btn");
 var estimatedInput = document.getElementById("estimated-time");
 var elapsedDisplay = document.getElementById("elapsed-time");
 var progressText = document.getElementById("progress-text");
-var progressSlider = document.getElementById("progress-slider"); // The only progress element now
+var progressSlider = document.getElementById("progress-slider");
 
 var timerInterval;
+var lastSaveTime = 0; // --- NEW: Track the last time we saved to Trello
 
 // Format milliseconds into MM:SS
 function formatTime(ms) {
@@ -24,10 +25,29 @@ function formatTime(ms) {
 // Function to style the slider track based on progress
 function styleSlider(percentage) {
   var isDark = document.body.classList.contains("dark-mode");
-  var fillColor = "#61bd4f"; // Green for progress
-  var bgColor = isDark ? "#41474d" : "#dfe1e6"; // Dark or light gray for the rest
+  // --- Change color to red if over 100% ---
+  var fillColor = percentage > 100 ? "#eb5a46" : "#61bd4f";
+  var bgColor = isDark ? "#41474d" : "#dfe1e6";
 
-  progressSlider.style.background = `linear-gradient(to right, ${fillColor} ${percentage}%, ${bgColor} ${percentage}%)`;
+  // The visual fill of the bar is capped at 100%
+  var fillPercentage = Math.min(percentage, 100);
+
+  progressSlider.style.background = `linear-gradient(to right, ${fillColor} ${fillPercentage}%, ${bgColor} ${fillPercentage}%)`;
+}
+
+// --- Saves current progress without stopping the timer ---
+function saveProgress() {
+  return t.get("card", "shared").then(function (data) {
+    if (!data.isRunning) return; // Only save if timer is running
+
+    var currentElapsed = data.elapsed || 0;
+    var sessionTime = Date.now() - data.startTime;
+    var totalElapsed = currentElapsed + sessionTime;
+
+    lastSaveTime = Date.now(); // Update our save time tracker
+    // We only save the new elapsed time. isRunning remains true.
+    return t.set("card", "shared", "elapsed", totalElapsed);
+  });
 }
 
 // Render the UI based on saved Trello data
@@ -42,6 +62,12 @@ function render() {
       elapsed += Date.now() - startTime;
       startBtn.classList.add("hidden");
       stopBtn.classList.remove("hidden");
+
+      // --- Check if it's time for a periodic save ---
+      if (Date.now() - lastSaveTime > 10 * 60 * 1000) {
+        // 10 minutes
+        saveProgress();
+      }
     } else {
       startBtn.classList.remove("hidden");
       stopBtn.classList.add("hidden");
@@ -53,13 +79,13 @@ function render() {
     var estimatedMs = estimated * 60 * 1000;
     var percentage = 0;
     if (estimatedMs > 0) {
+      // --- Removed the cap at 100% ---
       percentage = Math.floor((elapsed / estimatedMs) * 100);
-      if (percentage > 100) percentage = 100;
     }
 
     progressText.innerText = percentage + "%";
-    progressSlider.value = percentage;
-    styleSlider(percentage); // Apply the dynamic background style
+    progressSlider.value = Math.min(percentage, 100); // Slider value is capped visually
+    styleSlider(percentage);
 
     progressSlider.disabled = estimated <= 0;
   });
@@ -72,6 +98,7 @@ estimatedInput.addEventListener("change", function () {
 
 // START button
 startBtn.addEventListener("click", function () {
+  lastSaveTime = Date.now(); // --- NEW: Reset save timer on start
   t.set("card", "shared", { isRunning: true, startTime: Date.now() }).then(
     function () {
       startTimerLoop();
@@ -82,15 +109,10 @@ startBtn.addEventListener("click", function () {
 
 // STOP button
 stopBtn.addEventListener("click", function () {
-  t.get("card", "shared").then(function (data) {
-    var currentElapsed = data.elapsed || 0;
-    var sessionTime = Date.now() - data.startTime;
-    var totalElapsed = currentElapsed + sessionTime;
-    t.set("card", "shared", {
-      isRunning: false,
-      elapsed: totalElapsed,
-      startTime: 0,
-    }).then(function () {
+  // The 'saveProgress' function does most of the work, but we still
+  // need to set isRunning to false and stop the loop.
+  saveProgress().then(function () {
+    t.set("card", "shared", "isRunning", false).then(function () {
       stopTimerLoop();
       render();
     });
@@ -107,7 +129,7 @@ resetBtn.addEventListener("click", function () {
   );
 });
 
-// Slider Event Listener (no changes needed here)
+// Slider Event Listener
 progressSlider.addEventListener("input", function () {
   var percentage = parseInt(this.value);
   t.get("card", "shared", "estimated").then(function (estimated) {
@@ -144,7 +166,10 @@ t.render(function () {
   }
 
   t.get("card", "shared", "isRunning").then(function (isRunning) {
-    if (isRunning) startTimerLoop();
+    if (isRunning) {
+      lastSaveTime = Date.now(); // Ensure save timer is set on load
+      startTimerLoop();
+    }
     render();
   });
 });
