@@ -18,7 +18,8 @@ var manualEntryBody = document.getElementById("manual-entry-body");
 
 var timerInterval;
 
-// Format into DD:HH:MM:SS
+// Format elapsed time progressively — only show units that are non-zero
+// ss → mm:ss → hh:mm:ss → dd:hh:mm:ss
 function formatTime(ms) {
   var safeMs = Math.max(0, ms);
   var totalSeconds = Math.floor(safeMs / 1000);
@@ -27,15 +28,15 @@ function formatTime(ms) {
   var minutes = Math.floor((totalSeconds % 3600) / 60);
   var seconds = totalSeconds % 60;
 
-  return (
-    String(days).padStart(2, "0") +
-    ":" +
-    String(hours).padStart(2, "0") +
-    ":" +
-    String(minutes).padStart(2, "0") +
-    ":" +
-    String(seconds).padStart(2, "0")
-  );
+  var s = String(seconds).padStart(2, "0");
+  var m = String(minutes).padStart(2, "0");
+  var h = String(hours).padStart(2, "0");
+  var d = String(days).padStart(2, "0");
+
+  if (days > 0) return d + ":" + h + ":" + m + ":" + s;
+  if (hours > 0) return h + ":" + m + ":" + s;
+  if (minutes > 0) return m + ":" + s;
+  return s;
 }
 
 function styleSlider(percentage) {
