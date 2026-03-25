@@ -52,7 +52,10 @@ body {
 
 /* App */
 #app {
-  padding: 14px 16px 30px;
+  padding: 14px 24px 30px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 /* Toolbar */
@@ -118,7 +121,7 @@ input[type="date"]:focus {
 /* Summary grid */
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  grid-template-columns: repeat(6, 1fr);
   gap: 10px;
   margin-bottom: 14px;
 }
@@ -156,8 +159,9 @@ input[type="date"]:focus {
 .charts-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 12px;
+  margin-bottom: 12px;
+  width: 100%;
 }
 .chart-box {
   background: #fff;

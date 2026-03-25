@@ -538,6 +538,8 @@ function renderBarChart(canvasId, labels, data, yLabel, colorOverrides) {
           borderColor: colors,
           borderWidth: 1.5,
           borderRadius: 4,
+          barPercentage: 0.7,
+          categoryPercentage: 0.8,
         },
       ],
     },
