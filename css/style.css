@@ -14,11 +14,11 @@ body {
   padding: 10px 0;
 }
 
-/* Progress Bar */
+/* Progress Area */
 .progress-container {
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 8px; /* Reduced margin */
 }
 .progress-text {
   width: 40px;
@@ -26,11 +26,12 @@ body {
   color: #5e6c84;
 }
 .progress-bar-bg {
-  flex-grow: 1;
+  width: 100%;
   height: 10px;
   background-color: #ebecf0;
   border-radius: 5px;
   overflow: hidden;
+  margin-bottom: 20px; /* Original margin moved here */
 }
 .progress-bar-fill {
   height: 100%;
@@ -40,6 +41,9 @@ body {
 }
 
 /* Tracker Controls */
+.tracker-controls {
+  margin-top: 20px;
+}
 .row {
   display: flex;
   justify-content: space-between;
@@ -105,36 +109,72 @@ input[type="number"]:focus {
   display: none;
 }
 
-/* --- Dark Mode Styles --- */
-/* These styles will only apply when Trello is in Dark Mode */
-
-.body-color-theme-dark {
-  color: #b6c2cf;
+/* --- NEW Slider Styles --- */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 10px;
+  background: #dfe1e6;
+  outline: none;
+  opacity: 0.9;
+  -webkit-transition: 0.2s;
+  transition: opacity 0.2s;
+  border-radius: 5px;
+}
+.slider:hover {
+  opacity: 1;
+}
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: #0079bf;
+  cursor: pointer;
+  border-radius: 50%;
+}
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: #0079bf;
+  cursor: pointer;
+  border-radius: 50%;
+  border: none;
 }
 
-.body-color-theme-dark .progress-text {
+/* --- Dark Mode Styles (Now using our own class) --- */
+body.dark-mode {
+  color: #b6c2cf;
+  background-color: #282e33; /* Adding a subtle bg to match Trello */
+}
+.dark-mode .progress-text {
   color: #9fadbc;
 }
-
-.body-color-theme-dark .progress-bar-bg {
+.dark-mode .progress-bar-bg {
   background-color: rgba(255, 255, 255, 0.15);
 }
-
-.body-color-theme-dark input[type="number"] {
+.dark-mode input[type="number"] {
   background-color: #22272b;
   border-color: #41474d;
   color: #b6c2cf;
 }
-
-.body-color-theme-dark input[type="number"]:focus {
+.dark-mode input[type="number"]:focus {
   border-color: #0079bf;
 }
-
-.body-color-theme-dark .btn-secondary {
+.dark-mode .btn-secondary {
   background-color: rgba(255, 255, 255, 0.1);
   color: #b6c2cf;
 }
-
-.body-color-theme-dark .btn-secondary:hover {
+.dark-mode .btn-secondary:hover {
   background-color: rgba(255, 255, 255, 0.15);
+}
+.dark-mode .slider {
+  background: #41474d;
+}
+.dark-mode .slider::-webkit-slider-thumb {
+  background: #0098ff;
+}
+.dark-mode .slider::-moz-range-thumb {
+  background: #0098ff;
 }

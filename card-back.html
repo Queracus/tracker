@@ -6,11 +6,22 @@
     <script src="https://p.trellocdn.com/power-up.min.js"></script>
   </head>
   <body>
+    <!-- Manual Progress Slider -->
     <div class="progress-container">
       <span class="progress-text" id="progress-text">0%</span>
-      <div class="progress-bar-bg">
-        <div class="progress-bar-fill" id="progress-bar-fill"></div>
-      </div>
+      <input
+        type="range"
+        min="0"
+        max="100"
+        value="0"
+        class="slider"
+        id="progress-slider"
+      />
+    </div>
+
+    <!-- Original Linear Progress Bar (for visual feedback) -->
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progress-bar-fill"></div>
     </div>
 
     <div class="tracker-controls">

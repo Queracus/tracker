@@ -8,6 +8,7 @@ var estimatedInput = document.getElementById("estimated-time");
 var elapsedDisplay = document.getElementById("elapsed-time");
 var progressBarFill = document.getElementById("progress-bar-fill");
 var progressText = document.getElementById("progress-text");
+var progressSlider = document.getElementById("progress-slider"); // New slider element
 
 var timerInterval;
 
@@ -23,17 +24,12 @@ function formatTime(ms) {
 
 // Render the UI based on saved Trello data
 function render() {
-  var context = t.getContext();
-  if (context && context.theme === "dark") {
-    document.body.classList.add("dark-mode");
-  }
-  t.get("card", "shared").then(function (data) {
+  return t.get("card", "shared").then(function (data) {
     var estimated = data.estimated || 0; // in minutes
     var elapsed = data.elapsed || 0; // in milliseconds
     var isRunning = data.isRunning || false;
     var startTime = data.startTime || 0;
 
-    // If timer is running, calculate actual elapsed time right now
     if (isRunning) {
       elapsed += Date.now() - startTime;
       startBtn.classList.add("hidden");
@@ -43,11 +39,9 @@ function render() {
       stopBtn.classList.add("hidden");
     }
 
-    // Update Text fields
     estimatedInput.value = estimated > 0 ? estimated : "";
     elapsedDisplay.innerText = formatTime(elapsed);
 
-    // Update Progress Bar
     var estimatedMs = estimated * 60 * 1000;
     var percentage = 0;
     if (estimatedMs > 0) {
@@ -57,27 +51,26 @@ function render() {
 
     progressBarFill.style.width = percentage + "%";
     progressText.innerText = percentage + "%";
+    progressSlider.value = percentage;
+
+    // Disable slider if there is no estimate
+    progressSlider.disabled = estimated <= 0;
   });
 }
 
-// Auto-save estimated time when user types
+// Auto-save estimated time
 estimatedInput.addEventListener("change", function () {
-  t.set("card", "shared", "estimated", parseInt(this.value) || 0).then(
-    function () {
-      render();
-    },
-  );
+  t.set("card", "shared", "estimated", parseInt(this.value) || 0).then(render);
 });
 
 // START button
 startBtn.addEventListener("click", function () {
-  t.set("card", "shared", {
-    isRunning: true,
-    startTime: Date.now(),
-  }).then(function () {
-    startTimerLoop();
-    render();
-  });
+  t.set("card", "shared", { isRunning: true, startTime: Date.now() }).then(
+    function () {
+      startTimerLoop();
+      render();
+    },
+  );
 });
 
 // STOP button
@@ -86,7 +79,6 @@ stopBtn.addEventListener("click", function () {
     var currentElapsed = data.elapsed || 0;
     var sessionTime = Date.now() - data.startTime;
     var totalElapsed = currentElapsed + sessionTime;
-
     t.set("card", "shared", {
       isRunning: false,
       elapsed: totalElapsed,
@@ -100,13 +92,31 @@ stopBtn.addEventListener("click", function () {
 
 // RESET button
 resetBtn.addEventListener("click", function () {
-  t.set("card", "shared", {
-    isRunning: false,
-    elapsed: 0,
-    startTime: 0,
-  }).then(function () {
-    stopTimerLoop();
-    render();
+  t.set("card", "shared", { isRunning: false, elapsed: 0, startTime: 0 }).then(
+    function () {
+      stopTimerLoop();
+      render();
+    },
+  );
+});
+
+// --- NEW Slider Event Listener ---
+progressSlider.addEventListener("input", function () {
+  var percentage = parseInt(this.value);
+  t.get("card", "shared", "estimated").then(function (estimated) {
+    if (!estimated || estimated <= 0) return;
+
+    var estimatedMs = estimated * 60 * 1000;
+    var newElapsed = (estimatedMs * percentage) / 100;
+
+    // We only update elapsed time, and ensure timer is stopped
+    t.set("card", "shared", {
+      elapsed: newElapsed,
+      isRunning: false,
+    }).then(function () {
+      stopTimerLoop(); // Stop timer if it was running
+      render();
+    });
   });
 });
 
@@ -123,6 +133,12 @@ function stopTimerLoop() {
 
 // Initial Setup
 t.render(function () {
+  // Force-apply our own theme class to avoid race conditions
+  var context = t.getContext();
+  if (context && context.theme === "dark") {
+    document.body.classList.add("dark-mode");
+  }
+
   t.get("card", "shared", "isRunning").then(function (isRunning) {
     if (isRunning) startTimerLoop();
     render();
