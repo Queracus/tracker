@@ -126,7 +126,7 @@ function render() {
     progressText.innerText = percentage + "%";
     progressSlider.value = Math.min(percentage, 100);
     styleSlider(percentage);
-    progressSlider.disabled = estimated <= 0;
+    progressSlider.disabled = true;
 
     // Only populate log for admins
     if (isAdmin) {
@@ -240,41 +240,6 @@ addManualBtn.addEventListener("click", function () {
         display: "success",
       });
     });
-  });
-});
-
-// 'change' fires when mouse is released — saves only then
-progressSlider.addEventListener("change", function () {
-  var percentage = parseInt(this.value);
-  t.get("card", "shared").then(function (cardData) {
-    var estimated = cardData.estimated || 0;
-    if (estimated <= 0) return;
-
-    var estimatedMs = estimated * 60 * 1000;
-    var targetElapsedMs = (estimatedMs * percentage) / 100;
-    var timeLog = cardData.timeLog || [];
-
-    var currentElapsed = timeLog.reduce(
-      (acc, entry) =>
-        acc + (new Date(entry.end).getTime() - new Date(entry.start).getTime()),
-      0,
-    );
-    var difference = targetElapsedMs - currentElapsed;
-
-    if (difference !== 0) {
-      var now = new Date();
-      timeLog.push({
-        start: new Date(now.getTime() - difference).toISOString(),
-        end: now.toISOString(),
-        type: "slider-adjustment",
-      });
-      t.set("card", "shared", { timeLog: timeLog, isRunning: false }).then(
-        function () {
-          stopTimerLoop();
-          render();
-        },
-      );
-    }
   });
 });
 
