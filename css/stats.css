@@ -1,14 +1,10 @@
-/* Force modal container to 80% of viewport width */
-:root {
-  --modal-width: 80vw;
-}
-
-/* Trello renders the modal iframe at a fixed width — override it */
+/* Fill the full modal iframe */
 html,
 body {
-  width: 80vw;
-  max-width: 80vw;
+  width: 100%;
+  max-width: 100%;
   min-width: 500px;
+  height: 100%;
 }
 
 * {
@@ -168,7 +164,7 @@ input[type="date"]:focus {
   border-radius: 6px;
   padding: 14px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  min-height: 220px;
+  min-height: 300px;
   display: flex;
   flex-direction: column;
 }
@@ -183,7 +179,7 @@ input[type="date"]:focus {
 }
 canvas {
   flex: 1;
-  max-height: 200px;
+  max-height: 280px;
 }
 
 /* Tables */
