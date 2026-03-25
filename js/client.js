@@ -80,7 +80,7 @@ window.TrelloPowerUp.initialize(
                 return t.modal({
                   title: "Project Statistics",
                   url: t.signUrl("./stats.html"),
-                  height: 680,
+                  height: Math.round(window.screen.height * 0.85),
                   fullscreen: false,
                 });
               },

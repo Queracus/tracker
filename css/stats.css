@@ -1,3 +1,16 @@
+/* Force modal container to 80% of viewport width */
+:root {
+  --modal-width: 80vw;
+}
+
+/* Trello renders the modal iframe at a fixed width — override it */
+html,
+body {
+  width: 80vw;
+  max-width: 80vw;
+  min-width: 500px;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
