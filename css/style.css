@@ -83,6 +83,7 @@ label {
 }
 
 /* Inputs */
+input[type="text"],
 input[type="number"],
 input[type="datetime-local"] {
   padding: 6px;
@@ -96,7 +97,7 @@ input:disabled {
   background-color: #ebecf0;
   cursor: not-allowed;
 }
-input[type="number"] {
+input[type="text"]#estimated-time {
   width: 70px;
 }
 input:focus {
@@ -273,4 +274,46 @@ body.dark-mode .section-toggle {
 }
 body.dark-mode .section-toggle:hover {
   color: #0098ff;
+}
+
+/* Estimated time input wrapper */
+.estimated-input-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+input[type="text"]#estimated-time {
+  width: 80px;
+  font-size: 13px;
+}
+input[type="text"]#estimated-time.input-error {
+  border-color: #eb5a46;
+}
+input[type="text"]#estimated-time.input-ok {
+  border-color: #61bd4f;
+}
+.estimated-hint {
+  font-size: 10px;
+  color: #5e6c84;
+  white-space: nowrap;
+  min-height: 12px;
+  display: block;
+}
+.estimated-hint.hint-error {
+  color: #eb5a46;
+}
+.estimated-hint.hint-ok {
+  color: #61bd4f;
+}
+
+/* Dark mode additions */
+body.dark-mode input[type="text"]#estimated-time.input-error {
+  border-color: #eb5a46;
+}
+body.dark-mode input[type="text"]#estimated-time.input-ok {
+  border-color: #61bd4f;
+}
+body.dark-mode .estimated-hint {
+  color: #9fadbc;
 }

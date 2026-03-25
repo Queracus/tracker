@@ -15,8 +15,46 @@ var toggleLogBtn = document.getElementById("toggle-log-btn");
 var logContainer = document.getElementById("time-log-container");
 var toggleManualBtn = document.getElementById("toggle-manual-btn");
 var manualEntryBody = document.getElementById("manual-entry-body");
+var estimatedHint = document.getElementById("estimated-hint");
 
 var timerInterval;
+
+// ── Duration string parser ──
+// Accepts: "1d4h", "1h30m", "90m", "2h", "45", "1d", "1d 4h 30m", etc.
+// Always stores as total minutes (integer) — same as before.
+function parseDuration(str) {
+  if (!str || !str.trim()) return 0;
+  var s = str.trim().toLowerCase();
+
+  // Pure number → treat as minutes
+  if (/^\d+$/.test(s)) return parseInt(s, 10);
+
+  var days = 0,
+    hours = 0,
+    mins = 0;
+  var d = s.match(/(\d+)\s*d/);
+  var h = s.match(/(\d+)\s*h/);
+  var m = s.match(/(\d+)\s*m/);
+  if (d) days = parseInt(d[1], 10);
+  if (h) hours = parseInt(h[1], 10);
+  if (m) mins = parseInt(m[1], 10);
+
+  if (!d && !h && !m) return 0; // unrecognised format
+  return days * 1440 + hours * 60 + mins;
+}
+
+// Format stored minutes back to a human string for display in the input
+function minutesToDisplay(mins) {
+  if (!mins || mins <= 0) return "";
+  var d = Math.floor(mins / 1440);
+  var h = Math.floor((mins % 1440) / 60);
+  var m = mins % 60;
+  var parts = [];
+  if (d) parts.push(d + "d");
+  if (h) parts.push(h + "h");
+  if (m) parts.push(m + "m");
+  return parts.join(" ");
+}
 
 // Format elapsed time progressively — only show units that are non-zero
 // ss → mm:ss → hh:mm:ss → dd:hh:mm:ss
@@ -116,7 +154,13 @@ function render() {
       stopBtn.classList.add("hidden");
     }
 
-    estimatedInput.value = estimated > 0 ? estimated : "";
+    // Show human-readable string; don't overwrite while user is typing
+    if (document.activeElement !== estimatedInput) {
+      estimatedInput.value = minutesToDisplay(estimated);
+    }
+    estimatedInput.classList.remove("input-error", "input-ok");
+    estimatedHint.textContent = "";
+    estimatedHint.className = "estimated-hint";
     elapsedDisplay.innerText = formatTime(totalElapsed);
 
     var estimatedMs = estimated * 60 * 1000;
@@ -155,8 +199,43 @@ function render() {
 }
 
 // EVENT LISTENERS
-estimatedInput.addEventListener("change", function () {
-  t.set("card", "shared", "estimated", parseInt(this.value) || 0).then(render);
+
+// Live feedback while typing
+estimatedInput.addEventListener("input", function () {
+  var raw = this.value.trim();
+  if (!raw) {
+    this.classList.remove("input-error", "input-ok");
+    estimatedHint.textContent = "";
+    estimatedHint.className = "estimated-hint";
+    return;
+  }
+  var mins = parseDuration(raw);
+  if (mins > 0) {
+    this.classList.remove("input-error");
+    this.classList.add("input-ok");
+    estimatedHint.textContent = minutesToDisplay(mins);
+    estimatedHint.className = "estimated-hint hint-ok";
+  } else {
+    this.classList.remove("input-ok");
+    this.classList.add("input-error");
+    estimatedHint.textContent = "e.g. 1h30m, 2d, 90m";
+    estimatedHint.className = "estimated-hint hint-error";
+  }
+  t.sizeTo("body");
+});
+
+// Save on blur or Enter
+function saveEstimate() {
+  var mins = parseDuration(estimatedInput.value);
+  if (mins > 0 || estimatedInput.value.trim() === "") {
+    t.set("card", "shared", "estimated", mins).then(render);
+  }
+}
+estimatedInput.addEventListener("change", saveEstimate);
+estimatedInput.addEventListener("keydown", function (e) {
+  if (e.key === "Enter") {
+    this.blur();
+  }
 });
 
 startBtn.addEventListener("click", function () {

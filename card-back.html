@@ -11,18 +11,19 @@
       <div class="progress-top-row">
         <div class="progress-left">
           <span class="progress-text" id="progress-text">0%</span>
-          <span class="elapsed-inline" id="elapsed-time">00:00:00:00</span>
+          <span class="elapsed-inline" id="elapsed-time">–</span>
         </div>
         <div class="progress-right">
-          <label class="estimated-label" for="estimated-time"
-            >Est. (min):</label
-          >
-          <input
-            type="number"
-            id="estimated-time"
-            placeholder="e.g. 120"
-            disabled
-          />
+          <label class="estimated-label" for="estimated-time">Est.:</label>
+          <div class="estimated-input-wrap">
+            <input
+              type="text"
+              id="estimated-time"
+              placeholder="1h30m"
+              disabled
+            />
+            <span class="estimated-hint" id="estimated-hint"></span>
+          </div>
         </div>
       </div>
       <input
