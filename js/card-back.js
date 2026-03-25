@@ -23,6 +23,10 @@ function formatTime(ms) {
 
 // Render the UI based on saved Trello data
 function render() {
+  var context = t.getContext();
+  if (context && context.theme === "dark") {
+    document.body.classList.add("dark-mode");
+  }
   t.get("card", "shared").then(function (data) {
     var estimated = data.estimated || 0; // in minutes
     var elapsed = data.elapsed || 0; // in milliseconds
