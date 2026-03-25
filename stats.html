@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="./css/stats.css" />
+    <script src="https://p.trellocdn.com/power-up.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  </head>
+  <body>
+    <div id="loading" class="loading-screen">
+      <div class="spinner"></div>
+      <p>Loading board data…</p>
+    </div>
+
+    <div id="app" class="hidden">
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <label>From</label>
+          <input type="date" id="date-from" />
+          <label>To</label>
+          <input type="date" id="date-to" />
+          <button id="apply-filter" class="btn btn-primary">Apply</button>
+          <button id="reset-filter" class="btn btn-secondary">All time</button>
+        </div>
+        <div class="toolbar-group">
+          <button id="export-csv" class="btn btn-secondary">
+            ⬇ Export CSV
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary cards -->
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="summary-value" id="stat-total-cards">—</div>
+          <div class="summary-label">Total Cards</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-value" id="stat-done-cards">—</div>
+          <div class="summary-label">Completed</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-value" id="stat-total-hours">—</div>
+          <div class="summary-label">Total Hours Logged</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-value" id="stat-avg-hours">—</div>
+          <div class="summary-label">Avg Hours / Card</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-value" id="stat-over-estimate">—</div>
+          <div class="summary-label">Over Estimate</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-value" id="stat-no-log">—</div>
+          <div class="summary-label">No Time Logged</div>
+        </div>
+      </div>
+
+      <!-- Charts row -->
+      <div class="charts-row">
+        <div class="chart-box">
+          <div class="chart-title">Hours by List</div>
+          <canvas id="chart-by-list"></canvas>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title">Cards Completed per Week</div>
+          <canvas id="chart-completed-week"></canvas>
+        </div>
+      </div>
+
+      <!-- Per-member section -->
+      <div class="section-title">By Member</div>
+      <div class="charts-row">
+        <div class="chart-box">
+          <div class="chart-title">Hours Logged per Member</div>
+          <canvas id="chart-member-hours"></canvas>
+        </div>
+        <div class="chart-box">
+          <div class="chart-title">Cards per Member</div>
+          <canvas id="chart-member-cards"></canvas>
+        </div>
+      </div>
+      <div id="member-table-wrap">
+        <table class="stats-table" id="member-table">
+          <thead>
+            <tr>
+              <th>Member</th>
+              <th>Cards</th>
+              <th>Done</th>
+              <th>Hours Logged</th>
+              <th>Avg h/card</th>
+              <th>Over estimate</th>
+            </tr>
+          </thead>
+          <tbody id="member-table-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Per-label section -->
+      <div class="section-title">By Label</div>
+      <div class="charts-row">
+        <div class="chart-box chart-box-wide">
+          <div class="chart-title">Hours per Label</div>
+          <canvas id="chart-label-hours"></canvas>
+        </div>
+      </div>
+
+      <!-- Card list -->
+      <div class="section-title">Card Detail</div>
+      <div id="card-table-wrap">
+        <table class="stats-table" id="card-table">
+          <thead>
+            <tr>
+              <th>Card</th>
+              <th>List</th>
+              <th>Members</th>
+              <th>Est (h)</th>
+              <th>Logged (h)</th>
+              <th>%</th>
+              <th>Done</th>
+              <th>Completed</th>
+            </tr>
+          </thead>
+          <tbody id="card-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script src="./js/stats.js"></script>
+  </body>
+</html>

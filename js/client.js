@@ -10,11 +10,13 @@ function createProgressBarIcon(percentage) {
     w +
     '" height="' +
     h +
-    '" xmlns="http://www.w3.org/2000/svg"><rect width="' +
+    '" xmlns="http://www.w3.org/2000/svg">' +
+    '<rect width="' +
     w +
     '" height="' +
     h +
-    '" fill="#ebecf0" rx="3"/><rect width="' +
+    '" fill="#ebecf0" rx="3"/>' +
+    '<rect width="' +
     fillW +
     '" height="' +
     h +
@@ -58,6 +60,36 @@ window.TrelloPowerUp.initialize(
       });
     },
 
+    "board-buttons": function (t, options) {
+      // Only show the stats button to board admins
+      return Promise.all([t.board("memberships"), t.member("id")]).then(
+        function (results) {
+          var memberships = results[0].memberships || [];
+          var memberId = results[1].id;
+          var mine = memberships.find(function (m) {
+            return m.idMember === memberId;
+          });
+          var isAdmin = !!(mine && mine.memberType === "admin");
+          if (!isAdmin) return [];
+
+          return [
+            {
+              icon: "https://img.icons8.com/ios-glyphs/30/737A8C/combo-chart.png",
+              text: "Project Stats",
+              callback: function (t) {
+                return t.modal({
+                  title: "Project Statistics",
+                  url: t.signUrl("./stats.html"),
+                  height: 680,
+                  fullscreen: false,
+                });
+              },
+            },
+          ];
+        },
+      );
+    },
+
     "card-back-section": function (t, options) {
       return {
         title: "Time & Progress Tracker",
@@ -72,8 +104,6 @@ window.TrelloPowerUp.initialize(
   },
   {
     appName: "Time & Progress Tracker",
-    // Declaring these scopes is what allows t.board("memberships") to work
-    // inside card-back iframes. Without this, the call is silently denied.
     scope: {
       board: "read",
       card: "read",
