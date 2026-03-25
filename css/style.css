@@ -18,26 +18,12 @@ body {
 .progress-container {
   display: flex;
   align-items: center;
-  margin-bottom: 8px; /* Reduced margin */
+  margin-bottom: 20px;
 }
 .progress-text {
   width: 40px;
   font-weight: bold;
   color: #5e6c84;
-}
-.progress-bar-bg {
-  width: 100%;
-  height: 10px;
-  background-color: #ebecf0;
-  border-radius: 5px;
-  overflow: hidden;
-  margin-bottom: 20px; /* Original margin moved here */
-}
-.progress-bar-fill {
-  height: 100%;
-  width: 0%;
-  background-color: #61bd4f;
-  transition: width 0.3s ease;
 }
 
 /* Tracker Controls */
@@ -109,50 +95,50 @@ input[type="number"]:focus {
   display: none;
 }
 
-/* --- NEW Slider Styles --- */
+/* --- Combined Progress Bar / Slider Styles --- */
 .slider {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 10px;
-  background: #dfe1e6;
+  height: 12px; /* Made the bar slightly thicker */
+  background: transparent; /* Background is now set by JS */
+  cursor: pointer;
   outline: none;
-  opacity: 0.9;
-  -webkit-transition: 0.2s;
-  transition: opacity 0.2s;
-  border-radius: 5px;
 }
-.slider:hover {
-  opacity: 1;
+/* -webkit- is for Chrome/Safari/Edge, -moz- is for Firefox */
+.slider::-webkit-slider-runnable-track {
+  height: 12px;
+  border-radius: 6px;
+}
+.slider::-moz-range-track {
+  height: 12px;
+  border-radius: 6px;
 }
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
+  margin-top: -4px; /* Vertically center the thumb on the track */
   width: 20px;
   height: 20px;
   background: #0079bf;
-  cursor: pointer;
   border-radius: 50%;
+  border: 2px solid white;
 }
 .slider::-moz-range-thumb {
   width: 20px;
   height: 20px;
   background: #0079bf;
-  cursor: pointer;
   border-radius: 50%;
-  border: none;
+  border: 2px solid white;
 }
 
-/* --- Dark Mode Styles (Now using our own class) --- */
+/* --- Dark Mode Styles --- */
 body.dark-mode {
   color: #b6c2cf;
-  background-color: #282e33; /* Adding a subtle bg to match Trello */
+  background-color: #242528;
 }
 .dark-mode .progress-text {
   color: #9fadbc;
-}
-.dark-mode .progress-bar-bg {
-  background-color: rgba(255, 255, 255, 0.15);
 }
 .dark-mode input[type="number"] {
   background-color: #22272b;
@@ -169,12 +155,12 @@ body.dark-mode {
 .dark-mode .btn-secondary:hover {
   background-color: rgba(255, 255, 255, 0.15);
 }
-.dark-mode .slider {
-  background: #41474d;
-}
+
 .dark-mode .slider::-webkit-slider-thumb {
   background: #0098ff;
+  border-color: #282e33;
 }
 .dark-mode .slider::-moz-range-thumb {
   background: #0098ff;
+  border-color: #282e33;
 }

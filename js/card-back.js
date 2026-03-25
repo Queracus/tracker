@@ -6,9 +6,8 @@ var stopBtn = document.getElementById("stop-btn");
 var resetBtn = document.getElementById("reset-btn");
 var estimatedInput = document.getElementById("estimated-time");
 var elapsedDisplay = document.getElementById("elapsed-time");
-var progressBarFill = document.getElementById("progress-bar-fill");
 var progressText = document.getElementById("progress-text");
-var progressSlider = document.getElementById("progress-slider"); // New slider element
+var progressSlider = document.getElementById("progress-slider"); // The only progress element now
 
 var timerInterval;
 
@@ -20,6 +19,15 @@ function formatTime(ms) {
   return (
     String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0")
   );
+}
+
+// Function to style the slider track based on progress
+function styleSlider(percentage) {
+  var isDark = document.body.classList.contains("dark-mode");
+  var fillColor = "#61bd4f"; // Green for progress
+  var bgColor = isDark ? "#41474d" : "#dfe1e6"; // Dark or light gray for the rest
+
+  progressSlider.style.background = `linear-gradient(to right, ${fillColor} ${percentage}%, ${bgColor} ${percentage}%)`;
 }
 
 // Render the UI based on saved Trello data
@@ -49,11 +57,10 @@ function render() {
       if (percentage > 100) percentage = 100;
     }
 
-    progressBarFill.style.width = percentage + "%";
     progressText.innerText = percentage + "%";
     progressSlider.value = percentage;
+    styleSlider(percentage); // Apply the dynamic background style
 
-    // Disable slider if there is no estimate
     progressSlider.disabled = estimated <= 0;
   });
 }
@@ -100,7 +107,7 @@ resetBtn.addEventListener("click", function () {
   );
 });
 
-// --- NEW Slider Event Listener ---
+// Slider Event Listener (no changes needed here)
 progressSlider.addEventListener("input", function () {
   var percentage = parseInt(this.value);
   t.get("card", "shared", "estimated").then(function (estimated) {
@@ -109,18 +116,16 @@ progressSlider.addEventListener("input", function () {
     var estimatedMs = estimated * 60 * 1000;
     var newElapsed = (estimatedMs * percentage) / 100;
 
-    // We only update elapsed time, and ensure timer is stopped
-    t.set("card", "shared", {
-      elapsed: newElapsed,
-      isRunning: false,
-    }).then(function () {
-      stopTimerLoop(); // Stop timer if it was running
-      render();
-    });
+    t.set("card", "shared", { elapsed: newElapsed, isRunning: false }).then(
+      function () {
+        stopTimerLoop();
+        render();
+      },
+    );
   });
 });
 
-// Loop to update the UI every second if running
+// Loop to update the UI every second
 function startTimerLoop() {
   if (!timerInterval) {
     timerInterval = setInterval(render, 1000);
@@ -133,7 +138,6 @@ function stopTimerLoop() {
 
 // Initial Setup
 t.render(function () {
-  // Force-apply our own theme class to avoid race conditions
   var context = t.getContext();
   if (context && context.theme === "dark") {
     document.body.classList.add("dark-mode");
