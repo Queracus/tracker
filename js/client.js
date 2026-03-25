@@ -24,50 +24,60 @@ function createProgressBarIcon(percentage) {
   return "data:image/svg+xml;base64," + btoa(svg);
 }
 
-window.TrelloPowerUp.initialize({
-  "card-badges": function (t, options) {
-    return t.get("card", "shared").then(function (data) {
-      if (!data || !data.estimated || data.estimated <= 0) return [];
+window.TrelloPowerUp.initialize(
+  {
+    "card-badges": function (t, options) {
+      return t.get("card", "shared").then(function (data) {
+        if (!data || !data.estimated || data.estimated <= 0) return [];
 
-      var timeLog = data.timeLog || [];
-      var isRunning = data.isRunning || false;
-      var startTime = data.startTime || 0;
+        var timeLog = data.timeLog || [];
+        var isRunning = data.isRunning || false;
+        var startTime = data.startTime || 0;
 
-      // Compute total elapsed from the log entries
-      var totalElapsed = timeLog.reduce(function (acc, entry) {
-        return (
-          acc +
-          (new Date(entry.end).getTime() - new Date(entry.start).getTime())
-        );
-      }, 0);
+        var totalElapsed = timeLog.reduce(function (acc, entry) {
+          return (
+            acc +
+            (new Date(entry.end).getTime() - new Date(entry.start).getTime())
+          );
+        }, 0);
 
-      // If the timer is currently running, add live time since startTime
-      if (isRunning && startTime) {
-        totalElapsed += Date.now() - startTime;
-      }
+        if (isRunning && startTime) {
+          totalElapsed += Date.now() - startTime;
+        }
 
-      var estimatedMs = data.estimated * 60 * 1000;
-      var percentage = Math.floor((totalElapsed / estimatedMs) * 100);
+        var estimatedMs = data.estimated * 60 * 1000;
+        var percentage = Math.floor((totalElapsed / estimatedMs) * 100);
 
-      return [
-        {
-          icon: createProgressBarIcon(percentage),
-          text: percentage + "%",
-          color: percentage > 100 ? "red" : "green",
+        return [
+          {
+            icon: createProgressBarIcon(percentage),
+            text: percentage + "%",
+            color: percentage > 100 ? "red" : "green",
+          },
+        ];
+      });
+    },
+
+    "card-back-section": function (t, options) {
+      return {
+        title: "Time & Progress Tracker",
+        icon: "https://img.icons8.com/ios-glyphs/30/737A8C/time.png",
+        content: {
+          type: "iframe",
+          url: t.signUrl("./card-back.html", { bust: Date.now() }),
+          height: 250,
         },
-      ];
-    });
+      };
+    },
   },
-
-  "card-back-section": function (t, options) {
-    return {
-      title: "Time & Progress Tracker",
-      icon: "https://img.icons8.com/ios-glyphs/30/737A8C/time.png",
-      content: {
-        type: "iframe",
-        url: t.signUrl("./card-back.html", { bust: Date.now() }),
-        height: 250,
-      },
-    };
+  {
+    appName: "Time & Progress Tracker",
+    // Declaring these scopes is what allows t.board("memberships") to work
+    // inside card-back iframes. Without this, the call is silently denied.
+    scope: {
+      board: "read",
+      card: "read",
+      member: "read",
+    },
   },
-});
+);

@@ -13,6 +13,8 @@ var startTimeManual = document.getElementById("start-time-manual");
 var endTimeManual = document.getElementById("end-time-manual");
 var toggleLogBtn = document.getElementById("toggle-log-btn");
 var logContainer = document.getElementById("time-log-container");
+var toggleManualBtn = document.getElementById("toggle-manual-btn");
+var manualEntryBody = document.getElementById("manual-entry-body");
 
 var timerInterval;
 
@@ -63,55 +65,70 @@ function millisecondsToHms(ms) {
   return `${hrs}h ${mins}m`;
 }
 
+// Returns a promise that resolves to true if the current member is a board admin
+function checkIsAdmin() {
+  return Promise.all([t.board("memberships"), t.member("id")]).then(
+    function (results) {
+      var memberships = results[0].memberships || [];
+      var memberId = results[1].id;
+      var mine = memberships.find(function (m) {
+        return m.idMember === memberId;
+      });
+      return !!(mine && mine.memberType === "admin");
+    },
+  );
+}
+
 // Renders the entire UI
 function render() {
-  // Use t.memberCanWriteToModel — no board() permission needed
-  return Promise.all([t.getAll(), t.memberCanWriteToModel("card")]).then(
-    function (results) {
-      var cardData = results[0].card?.shared || {};
-      var canWrite = results[1];
+  return Promise.all([t.getAll(), checkIsAdmin()]).then(function (results) {
+    var cardData = results[0].card?.shared || {};
+    var isAdmin = results[1];
 
-      // Treat write permission as proxy for admin/member (non-observers can write)
-      // For stricter admin-only: fall back to checking board memberships if needed,
-      // but memberCanWriteToModel works for the vast majority of real use cases.
-      var isAdmin = canWrite;
+    // Admin-only controls
+    estimatedInput.disabled = !isAdmin;
+    resetBtn.disabled = !isAdmin;
 
-      estimatedInput.disabled = !isAdmin;
-      resetBtn.disabled = !isAdmin;
+    // Hide the time log toggle entirely from non-admins
+    toggleLogBtn.style.display = isAdmin ? "" : "none";
+    if (!isAdmin) {
+      logContainer.classList.add("hidden");
+    }
 
-      var estimated = cardData.estimated || 0;
-      var timeLog = cardData.timeLog || [];
-      var isRunning = cardData.isRunning || false;
-      var startTime = cardData.startTime || 0;
+    var estimated = cardData.estimated || 0;
+    var timeLog = cardData.timeLog || [];
+    var isRunning = cardData.isRunning || false;
+    var startTime = cardData.startTime || 0;
 
-      var totalElapsed = timeLog.reduce(
-        (acc, entry) =>
-          acc +
-          (new Date(entry.end).getTime() - new Date(entry.start).getTime()),
-        0,
-      );
+    var totalElapsed = timeLog.reduce(
+      (acc, entry) =>
+        acc + (new Date(entry.end).getTime() - new Date(entry.start).getTime()),
+      0,
+    );
 
-      if (isRunning) {
-        totalElapsed += Date.now() - startTime;
-        startBtn.classList.add("hidden");
-        stopBtn.classList.remove("hidden");
-      } else {
-        startBtn.classList.remove("hidden");
-        stopBtn.classList.add("hidden");
-      }
+    if (isRunning) {
+      totalElapsed += Date.now() - startTime;
+      startBtn.classList.add("hidden");
+      stopBtn.classList.remove("hidden");
+    } else {
+      startBtn.classList.remove("hidden");
+      stopBtn.classList.add("hidden");
+    }
 
-      estimatedInput.value = estimated > 0 ? estimated : "";
-      elapsedDisplay.innerText = formatTime(totalElapsed);
+    estimatedInput.value = estimated > 0 ? estimated : "";
+    elapsedDisplay.innerText = formatTime(totalElapsed);
 
-      var estimatedMs = estimated * 60 * 1000;
-      var percentage =
-        estimatedMs > 0 ? Math.floor((totalElapsed / estimatedMs) * 100) : 0;
+    var estimatedMs = estimated * 60 * 1000;
+    var percentage =
+      estimatedMs > 0 ? Math.floor((totalElapsed / estimatedMs) * 100) : 0;
 
-      progressText.innerText = percentage + "%";
-      progressSlider.value = Math.min(percentage, 100);
-      styleSlider(percentage);
-      progressSlider.disabled = estimated <= 0;
+    progressText.innerText = percentage + "%";
+    progressSlider.value = Math.min(percentage, 100);
+    styleSlider(percentage);
+    progressSlider.disabled = estimated <= 0;
 
+    // Only populate log for admins
+    if (isAdmin) {
       logContainer.innerHTML = "";
       if (timeLog.length === 0) {
         logContainer.innerHTML = "<p>No time entries yet.</p>";
@@ -125,15 +142,15 @@ function render() {
             var entryEl = document.createElement("div");
             entryEl.className = "log-entry";
             entryEl.innerHTML = `
-            <span class="log-duration">${millisecondsToHms(durationMs)} (${entry.type})</span>
-            <span>Start: ${formatLogDate(entry.start)}</span>
-            <span>End: ${formatLogDate(entry.end)}</span>
-          `;
+              <span class="log-duration">${millisecondsToHms(durationMs)} (${entry.type})</span>
+              <span>Start: ${formatLogDate(entry.start)}</span>
+              <span>End: ${formatLogDate(entry.end)}</span>
+            `;
             logContainer.appendChild(entryEl);
           });
       }
-    },
-  );
+    }
+  });
 }
 
 // EVENT LISTENERS
@@ -170,12 +187,25 @@ stopBtn.addEventListener("click", function () {
 });
 
 resetBtn.addEventListener("click", function () {
-  t.set("card", "shared", { isRunning: false, startTime: 0, timeLog: [] }).then(
-    () => {
+  // Double-check admin status server-side before executing reset
+  checkIsAdmin().then(function (isAdmin) {
+    if (!isAdmin) {
+      t.alert({
+        message: "Only board admins can reset the tracker.",
+        duration: 4,
+        display: "error",
+      });
+      return;
+    }
+    t.set("card", "shared", {
+      isRunning: false,
+      startTime: 0,
+      timeLog: [],
+    }).then(() => {
       stopTimerLoop();
       render();
-    },
-  );
+    });
+  });
 });
 
 // Manual Log Entry
@@ -250,6 +280,14 @@ progressSlider.addEventListener("change", function () {
 toggleLogBtn.addEventListener("click", function () {
   var isHidden = logContainer.classList.toggle("hidden");
   toggleLogBtn.innerText = isHidden ? "Show Time Log" : "Hide Time Log";
+  t.sizeTo("body");
+});
+
+// Collapsible manual entry
+toggleManualBtn.addEventListener("click", function () {
+  var isHidden = manualEntryBody.classList.toggle("hidden");
+  var arrow = toggleManualBtn.querySelector(".toggle-arrow");
+  if (arrow) arrow.classList.toggle("open", !isHidden);
   t.sizeTo("body");
 });
 

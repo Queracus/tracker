@@ -24,32 +24,65 @@ label {
 .divider {
   border: none;
   border-top: 1px solid #dfe1e6;
-  margin: 20px 0;
-}
-.section-title {
-  font-size: 14px;
-  font-weight: bold;
-  margin-top: 0;
-  margin-bottom: 15px;
+  margin: 14px 0;
 }
 
-/* Progress Area (Updated) */
+/* Progress Section */
 .progress-section {
-  margin-bottom: 25px;
+  margin-bottom: 12px;
 }
+
+/* Top row: left = % + elapsed, right = estimated input */
+.progress-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+  gap: 10px;
+}
+
+.progress-left {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .progress-text {
   font-weight: bold;
   color: #5e6c84;
   font-size: 16px;
-  margin-bottom: 8px;
-  display: block;
 }
 
-/* Main Controls */
-#elapsed-time {
-  font-size: 18px;
-  font-weight: bold;
+.elapsed-inline {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5e6c84;
+  white-space: nowrap;
 }
+
+.progress-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.estimated-label {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: #5e6c84;
+}
+
+/* Buttons row */
+.buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+/* Inputs */
 input[type="number"],
 input[type="datetime-local"] {
   padding: 6px;
@@ -64,18 +97,13 @@ input:disabled {
   cursor: not-allowed;
 }
 input[type="number"] {
-  width: 80px;
+  width: 70px;
 }
 input:focus {
   border-color: #0079bf;
 }
 
 /* Buttons */
-.buttons {
-  display: flex;
-  gap: 10px;
-  margin-top: 5px;
-}
 .btn {
   padding: 8px 16px;
   border: none;
@@ -119,6 +147,34 @@ input:focus {
   cursor: pointer;
   padding: 0;
   font-weight: normal;
+}
+
+/* Collapsible section toggle */
+.section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #172b4d;
+  margin-bottom: 0;
+}
+.section-toggle:hover {
+  color: #0079bf;
+}
+.toggle-arrow {
+  font-size: 10px;
+  display: inline-block;
+  transition: transform 0.2s ease;
+  color: #5e6c84;
+}
+.toggle-arrow.open {
+  transform: rotate(90deg);
+}
+
+/* Manual entry body */
+#manual-entry-body {
+  margin-top: 12px;
 }
 
 /* Combined Progress Bar / Slider Styles */
@@ -185,7 +241,9 @@ body.dark-mode {
 body.dark-mode .divider {
   border-color: #41474d;
 }
-body.dark-mode .progress-text {
+body.dark-mode .progress-text,
+body.dark-mode .elapsed-inline,
+body.dark-mode .estimated-label {
   color: #9fadbc;
 }
 body.dark-mode input {
@@ -220,4 +278,10 @@ body.dark-mode .slider::-moz-range-thumb {
 }
 body.dark-mode #time-log-container {
   border-color: #41474d;
+}
+body.dark-mode .section-toggle {
+  color: #b6c2cf;
+}
+body.dark-mode .section-toggle:hover {
+  color: #0098ff;
 }
