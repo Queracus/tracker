@@ -749,6 +749,11 @@ function wireControls() {
       this.classList.add("active");
       document.getElementById("btn-per-day").classList.remove("active");
       renderChartCompleted(filteredCards());
+      // Force Chart.js to re-measure its container after the DOM settles
+      requestAnimationFrame(function () {
+        if (charts["chart-completed-week"])
+          charts["chart-completed-week"].resize();
+      });
     });
 
   document.getElementById("btn-per-day").addEventListener("click", function () {
@@ -756,6 +761,10 @@ function wireControls() {
     this.classList.add("active");
     document.getElementById("btn-per-week").classList.remove("active");
     renderChartCompleted(filteredCards());
+    requestAnimationFrame(function () {
+      if (charts["chart-completed-week"])
+        charts["chart-completed-week"].resize();
+    });
   });
 }
 
@@ -896,12 +905,13 @@ function getColCount(width) {
 
 function applyColCount(app) {
   var cols = getColCount(app.offsetWidth);
+  if (app.offsetWidth === 0) return; // Not laid out yet, skip
   var prev = app.dataset.cols;
   if (prev === String(cols)) return;
   app.dataset.cols = cols;
 
-  var chartCols = "repeat(" + cols + ", 1fr)";
-  // Two-chart grids
+  // Two-chart grids: always at least 1 col, max 2 (these charts are paired)
+  var chartCols = cols >= 2 ? "repeat(2, 1fr)" : "repeat(1, 1fr)";
   ["charts-main", "charts-member"].forEach(function (id) {
     var el = document.getElementById(id);
     if (el) el.style.gridTemplateColumns = chartCols;
@@ -923,7 +933,19 @@ function applyColCount(app) {
 
 function initResizeObserver() {
   var app = document.getElementById("app");
-  applyColCount(app);
+
+  // Trello modal iframes often report 0 width on first paint.
+  // Poll until we get a real width, then set up the observer.
+  function tryApply() {
+    if (app.offsetWidth > 0) {
+      applyColCount(app);
+    } else {
+      // Not laid out yet — try again next frame
+      requestAnimationFrame(tryApply);
+    }
+  }
+  tryApply();
+
   if (window.ResizeObserver) {
     var ro = new ResizeObserver(function () {
       applyColCount(app);

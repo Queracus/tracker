@@ -66,7 +66,8 @@ body {
   border-radius: 6px;
   padding: 14px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  min-height: 300px;
+  /* Fixed height so Chart.js always has a stable container to measure */
+  height: 340px;
   display: flex;
   flex-direction: column;
 }
@@ -76,9 +77,17 @@ body {
   color: #5e6c84;
   margin-bottom: 10px;
 }
-canvas {
+/* Canvas wrapper fills remaining space — gives Chart.js a consistent pixel height */
+.chart-canvas-wrap {
+  position: relative;
   flex: 1;
-  max-height: 300px;
+  min-height: 0;
+}
+canvas {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* ── Tables ── */
@@ -205,6 +214,9 @@ canvas {
 .dark .chart-box {
   background: #282e33;
   box-shadow: none;
+}
+.dark .chart-canvas-wrap {
+  /* inherits correctly */
 }
 
 .dark .summary-value {
