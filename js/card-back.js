@@ -9,13 +9,114 @@ var elapsedDisplay = document.getElementById("elapsed-time");
 var progressText = document.getElementById("progress-text");
 var progressSlider = document.getElementById("progress-slider");
 var addManualBtn = document.getElementById("add-manual-btn");
-var startTimeManual = document.getElementById("start-time-manual");
-var endTimeManual = document.getElementById("end-time-manual");
 var toggleLogBtn = document.getElementById("toggle-log-btn");
 var logContainer = document.getElementById("time-log-container");
 var toggleManualBtn = document.getElementById("toggle-manual-btn");
 var manualEntryBody = document.getElementById("manual-entry-body");
 var estimatedHint = document.getElementById("estimated-hint");
+var durationPreview = document.getElementById("manual-duration-preview");
+
+// ── Build hour/minute dropdowns ──
+function buildSelects() {
+  var hours = [
+    document.getElementById("start-hour-manual"),
+    document.getElementById("end-hour-manual"),
+  ];
+  var mins = [
+    document.getElementById("start-min-manual"),
+    document.getElementById("end-min-manual"),
+  ];
+  hours.forEach(function (sel) {
+    for (var h = 0; h < 24; h++) {
+      var o = document.createElement("option");
+      o.value = h;
+      o.textContent = String(h).padStart(2, "0");
+      sel.appendChild(o);
+    }
+  });
+  mins.forEach(function (sel) {
+    for (var m = 0; m < 60; m += 5) {
+      var o = document.createElement("option");
+      o.value = m;
+      o.textContent = String(m).padStart(2, "0");
+      sel.appendChild(o);
+    }
+  });
+}
+buildSelects();
+
+// Pre-fill date fields and sensible hour defaults to today
+function prefillManualFields() {
+  var now = new Date();
+  var today = now.toISOString().slice(0, 10);
+  var startDateEl = document.getElementById("start-date-manual");
+  var endDateEl = document.getElementById("end-date-manual");
+  var startHourEl = document.getElementById("start-hour-manual");
+  var endHourEl = document.getElementById("end-hour-manual");
+  var startMinEl = document.getElementById("start-min-manual");
+  var endMinEl = document.getElementById("end-min-manual");
+  if (!startDateEl.value) {
+    startDateEl.value = today;
+    endDateEl.value = today;
+    // Round down to nearest 5-min for end, 1h before for start
+    var endM = Math.floor(now.getMinutes() / 5) * 5;
+    var startH = now.getHours() > 0 ? now.getHours() - 1 : 0;
+    startHourEl.value = startH;
+    startMinEl.value = endM;
+    endHourEl.value = now.getHours();
+    endMinEl.value = endM;
+  }
+}
+
+function getManualDateTime(dateId, hourId, minId) {
+  var d = document.getElementById(dateId).value;
+  var h = document.getElementById(hourId).value;
+  var m = document.getElementById(minId).value;
+  if (!d) return null;
+  var dt = new Date(d);
+  dt.setHours(parseInt(h, 10), parseInt(m, 10), 0, 0);
+  return dt;
+}
+
+function updateDurationPreview() {
+  var start = getManualDateTime(
+    "start-date-manual",
+    "start-hour-manual",
+    "start-min-manual",
+  );
+  var end = getManualDateTime(
+    "end-date-manual",
+    "end-hour-manual",
+    "end-min-manual",
+  );
+  if (start && end && end > start) {
+    var ms = end - start;
+    var totalMins = Math.floor(ms / 60000);
+    var h = Math.floor(totalMins / 60);
+    var m = totalMins % 60;
+    var label = (h > 0 ? h + "h " : "") + (m > 0 ? m + "m" : "");
+    durationPreview.textContent = "Duration: " + label;
+    durationPreview.className = "duration-preview preview-ok";
+  } else if (start && end && end <= start) {
+    durationPreview.textContent = "End must be after start";
+    durationPreview.className = "duration-preview preview-err";
+  } else {
+    durationPreview.textContent = "";
+    durationPreview.className = "duration-preview";
+  }
+  t.sizeTo("body");
+}
+
+[
+  "start-date-manual",
+  "start-hour-manual",
+  "start-min-manual",
+  "end-date-manual",
+  "end-hour-manual",
+  "end-min-manual",
+].forEach(function (id) {
+  document.getElementById(id).addEventListener("change", updateDurationPreview);
+});
 
 var timerInterval;
 
@@ -290,10 +391,18 @@ resetBtn.addEventListener("click", function () {
 
 // Manual Log Entry
 addManualBtn.addEventListener("click", function () {
-  var startVal = startTimeManual.value;
-  var endVal = endTimeManual.value;
+  var startVal = getManualDateTime(
+    "start-date-manual",
+    "start-hour-manual",
+    "start-min-manual",
+  );
+  var endVal = getManualDateTime(
+    "end-date-manual",
+    "end-hour-manual",
+    "end-min-manual",
+  );
 
-  if (!startVal || !endVal || new Date(endVal) <= new Date(startVal)) {
+  if (!startVal || !endVal || endVal <= startVal) {
     t.alert({
       message: "End time must be after start time.",
       duration: 4,
@@ -305,13 +414,16 @@ addManualBtn.addEventListener("click", function () {
   t.get("card", "shared", "timeLog").then(function (log) {
     var timeLog = log || [];
     timeLog.push({
-      start: new Date(startVal).toISOString(),
-      end: new Date(endVal).toISOString(),
+      start: startVal.toISOString(),
+      end: endVal.toISOString(),
       type: "manual",
     });
     t.set("card", "shared", "timeLog", timeLog).then(() => {
-      startTimeManual.value = "";
-      endTimeManual.value = "";
+      // Reset fields
+      document.getElementById("start-date-manual").value = "";
+      document.getElementById("end-date-manual").value = "";
+      durationPreview.textContent = "";
+      durationPreview.className = "duration-preview";
       render();
       t.alert({
         message: "Manual time entry added!",
@@ -333,6 +445,7 @@ toggleManualBtn.addEventListener("click", function () {
   var isHidden = manualEntryBody.classList.toggle("hidden");
   var arrow = toggleManualBtn.querySelector(".toggle-arrow");
   if (arrow) arrow.classList.toggle("open", !isHidden);
+  if (!isHidden) prefillManualFields();
   t.sizeTo("body");
 });
 

@@ -51,14 +51,25 @@
         <span class="toggle-arrow">▶</span> Add Time Manually
       </button>
       <div id="manual-entry-body" class="hidden">
-        <div class="row">
-          <label for="start-time-manual">Start:</label>
-          <input type="datetime-local" id="start-time-manual" />
+        <div class="dt-picker-group">
+          <label class="dt-picker-label">Start</label>
+          <div class="dt-picker-row">
+            <input type="date" id="start-date-manual" class="dt-date" />
+            <select id="start-hour-manual" class="dt-sel"></select>
+            <span class="dt-colon">:</span>
+            <select id="start-min-manual" class="dt-sel"></select>
+          </div>
         </div>
-        <div class="row">
-          <label for="end-time-manual">End:</label>
-          <input type="datetime-local" id="end-time-manual" />
+        <div class="dt-picker-group">
+          <label class="dt-picker-label">End</label>
+          <div class="dt-picker-row">
+            <input type="date" id="end-date-manual" class="dt-date" />
+            <select id="end-hour-manual" class="dt-sel"></select>
+            <span class="dt-colon">:</span>
+            <select id="end-min-manual" class="dt-sel"></select>
+          </div>
         </div>
+        <div id="manual-duration-preview" class="duration-preview"></div>
         <button id="add-manual-btn" class="btn btn-secondary full-width">
           Add Manual Time Entry
         </button>
