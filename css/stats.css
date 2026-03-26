@@ -114,6 +114,18 @@ body {
   gap: 10px;
   margin-bottom: 14px;
 }
+#app[data-cols="1"] .summary-grid {
+  grid-template-columns: repeat(2, 1fr);
+}
+#app[data-cols="2"] .summary-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+#app[data-cols="3"] .summary-grid {
+  grid-template-columns: repeat(6, 1fr);
+}
+#app[data-cols="4"] .summary-grid {
+  grid-template-columns: repeat(6, 1fr);
+}
 .summary-card {
   background: #fff;
   border-radius: 6px;
@@ -147,17 +159,40 @@ body {
 }
 .charts-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr; /* default: 2 cols */
   gap: 12px;
   margin-bottom: 12px;
   width: 100%;
 }
+
+/* Drive column count from #app[data-cols] set by ResizeObserver */
+#app[data-cols="1"] .charts-row {
+  grid-template-columns: 1fr;
+}
+#app[data-cols="2"] .charts-row {
+  grid-template-columns: 1fr 1fr;
+}
+#app[data-cols="3"] .charts-row {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+#app[data-cols="4"] .charts-row {
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+
+/* Wide charts always span full row regardless of col count */
+#app[data-cols="1"] .chart-box-wide,
+#app[data-cols="2"] .chart-box-wide,
+#app[data-cols="3"] .chart-box-wide,
+#app[data-cols="4"] .chart-box-wide {
+  grid-column: 1 / -1;
+}
+
 .chart-box {
   background: #fff;
   border-radius: 6px;
   padding: 14px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  min-height: 300px;
+  min-height: clamp(260px, 20vw, 360px);
   display: flex;
   flex-direction: column;
 }
@@ -172,7 +207,7 @@ body {
 }
 canvas {
   flex: 1;
-  max-height: 280px;
+  max-height: clamp(220px, 16vw, 320px);
 }
 
 /* Tables */

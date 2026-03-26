@@ -148,6 +148,7 @@ function loadData() {
         initDateDefaults();
         buildUI();
         wireControls();
+        initResizeObserver();
       });
     })
     .catch(function (err) {
@@ -880,4 +881,36 @@ function set(id, val) {
 function showLoading(show) {
   document.getElementById("loading").classList.toggle("hidden", !show);
   document.getElementById("app").classList.toggle("hidden", show);
+}
+
+// ─────────────────────────────────────────────
+// RESPONSIVE GRID — ResizeObserver
+// ─────────────────────────────────────────────
+function getColCount(width) {
+  if (width >= 1400) return 4;
+  if (width >= 1000) return 3;
+  if (width >= 600) return 2;
+  return 1;
+}
+
+function applyColCount(app) {
+  var cols = getColCount(app.offsetWidth);
+  if (app.dataset.cols !== String(cols)) {
+    app.dataset.cols = cols;
+    // Notify Chart.js to resize all active charts
+    Object.keys(charts).forEach(function (id) {
+      if (charts[id]) charts[id].resize();
+    });
+  }
+}
+
+function initResizeObserver() {
+  var app = document.getElementById("app");
+  applyColCount(app); // run once immediately
+  if (window.ResizeObserver) {
+    var ro = new ResizeObserver(function () {
+      applyColCount(app);
+    });
+    ro.observe(app);
+  }
 }
