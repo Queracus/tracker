@@ -65,7 +65,13 @@
           <canvas id="chart-by-list"></canvas>
         </div>
         <div class="chart-box">
-          <div class="chart-title">Cards Completed per Week</div>
+          <div class="chart-title-row">
+            <span>Cards Completed</span>
+            <div class="toggle-group">
+              <button class="toggle-btn active" id="btn-per-week">Week</button>
+              <button class="toggle-btn" id="btn-per-day">Day</button>
+            </div>
+          </div>
           <canvas id="chart-completed-week"></canvas>
         </div>
       </div>
@@ -78,7 +84,9 @@
           <canvas id="chart-member-hours"></canvas>
         </div>
         <div class="chart-box">
-          <div class="chart-title">Cards per Member</div>
+          <div class="chart-title">
+            Cards per Member (Assigned vs Completed)
+          </div>
           <canvas id="chart-member-cards"></canvas>
         </div>
       </div>
@@ -104,6 +112,15 @@
         <div class="chart-box chart-box-wide">
           <div class="chart-title">Hours per Label</div>
           <canvas id="chart-label-hours"></canvas>
+        </div>
+      </div>
+
+      <!-- Per-list section -->
+      <div class="section-title">By List</div>
+      <div class="charts-row">
+        <div class="chart-box chart-box-wide">
+          <div class="chart-title">Cards per List (Open vs Completed)</div>
+          <canvas id="chart-cards-per-list"></canvas>
         </div>
       </div>
 

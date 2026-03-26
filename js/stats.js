@@ -38,6 +38,7 @@ var allMembers = {}; // id → {id, fullName, username}
 var allLists = {}; // id → {id, name}
 var dateFrom = null;
 var dateTo = null;
+var completedView = "week"; // "week" | "day"
 
 // ─────────────────────────────────────────────
 // BOOT
@@ -224,9 +225,10 @@ function buildUI() {
   var cards = filteredCards();
   renderSummary(cards);
   renderChartByList(cards);
-  renderChartCompletedWeek(cards);
+  renderChartCompleted(cards);
   renderMemberSection(cards);
   renderLabelSection(cards);
+  renderCardsPerList(cards);
   renderCardTable(cards);
 }
 
@@ -271,15 +273,15 @@ function renderChartByList(cards) {
   renderBarChart("chart-by-list", labels, data, "Hours");
 }
 
-// ── Chart: Cards completed per week ──
-function renderChartCompletedWeek(cards) {
+// ── Chart: Cards completed per week or day ──
+function renderChartCompleted(cards) {
   var done = cards.filter(function (c) {
     return c.dueComplete && c.due;
   });
   var map = {};
   done.forEach(function (c) {
-    var wk = weekLabel(c.due);
-    map[wk] = (map[wk] || 0) + 1;
+    var key = completedView === "day" ? toInputDate(c.due) : weekLabel(c.due);
+    map[key] = (map[key] || 0) + 1;
   });
   var labels = Object.keys(map).sort();
   var data = labels.map(function (l) {
@@ -338,17 +340,28 @@ function renderMemberSection(cards) {
   var hours = keys.map(function (k) {
     return +(members[k].loggedMs / 3600000).toFixed(2);
   });
-  var cardCounts = keys.map(function (k) {
+  var assigned = keys.map(function (k) {
     return members[k].cards;
+  });
+  var completed = keys.map(function (k) {
+    return members[k].done;
   });
 
   renderBarChart("chart-member-hours", labels, hours, "Hours");
-  renderBarChart("chart-member-cards", labels, cardCounts, "Cards");
+  renderGroupedBarChart(
+    "chart-member-cards",
+    labels,
+    [
+      { label: "Assigned", data: assigned, color: PALETTE[0] },
+      { label: "Completed", data: completed, color: PALETTE[1] },
+    ],
+    "Cards",
+  );
 
   // Table
   var tbody = document.getElementById("member-table-body");
   tbody.innerHTML = "";
-  keys.forEach(function (k, i) {
+  keys.forEach(function (k) {
     var m = members[k];
     var avg = m.cards > 0 ? m.loggedMs / 3600000 / m.cards : 0;
     var tr = document.createElement("tr");
@@ -378,6 +391,33 @@ function renderMemberSection(cards) {
       "</td>";
     tbody.appendChild(tr);
   });
+}
+
+// ── Chart: Cards per List (open vs completed) ──
+function renderCardsPerList(cards) {
+  var map = {};
+  cards.forEach(function (card) {
+    var name = card.listName;
+    if (!map[name]) map[name] = { open: 0, done: 0 };
+    if (card.dueComplete) map[name].done++;
+    else map[name].open++;
+  });
+  var labels = Object.keys(map);
+  var open = labels.map(function (l) {
+    return map[l].open;
+  });
+  var done = labels.map(function (l) {
+    return map[l].done;
+  });
+  renderGroupedBarChart(
+    "chart-cards-per-list",
+    labels,
+    [
+      { label: "Open", data: open, color: PALETTE[0] },
+      { label: "Completed", data: done, color: PALETTE[1] },
+    ],
+    "Cards",
+  );
 }
 
 // ── Label section ──
@@ -578,6 +618,38 @@ function destroyChart(id) {
   }
 }
 
+// datasets: [{ label, data, color }, ...]
+function renderGroupedBarChart(canvasId, labels, datasets, yLabel) {
+  destroyChart(canvasId);
+  var ctx = document.getElementById(canvasId).getContext("2d");
+  charts[canvasId] = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: datasets.map(function (ds) {
+        return {
+          label: ds.label,
+          data: ds.data,
+          backgroundColor: ds.color + "cc",
+          borderColor: ds.color,
+          borderWidth: 1.5,
+          borderRadius: 4,
+          barPercentage: 0.75,
+          categoryPercentage: 0.8,
+        };
+      }),
+    },
+    options: (function () {
+      var opts = baseChartOptions(yLabel);
+      opts.plugins.legend = {
+        display: true,
+        labels: { color: legendColor, font: { size: 11 } },
+      };
+      return opts;
+    })(),
+  });
+}
+
 // ─────────────────────────────────────────────
 // CONTROLS
 // ─────────────────────────────────────────────
@@ -600,6 +672,22 @@ function wireControls() {
     });
 
   document.getElementById("export-csv").addEventListener("click", exportCSV);
+
+  document
+    .getElementById("btn-per-week")
+    .addEventListener("click", function () {
+      completedView = "week";
+      this.classList.add("active");
+      document.getElementById("btn-per-day").classList.remove("active");
+      renderChartCompleted(filteredCards());
+    });
+
+  document.getElementById("btn-per-day").addEventListener("click", function () {
+    completedView = "day";
+    this.classList.add("active");
+    document.getElementById("btn-per-week").classList.remove("active");
+    renderChartCompleted(filteredCards());
+  });
 }
 
 // ─────────────────────────────────────────────
