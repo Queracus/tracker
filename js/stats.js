@@ -904,26 +904,24 @@ function getColCount(width) {
 }
 
 function applyColCount(app) {
-  var cols = getColCount(app.offsetWidth);
   if (app.offsetWidth === 0) return; // Not laid out yet, skip
+  var cols = getColCount(app.offsetWidth);
   var prev = app.dataset.cols;
   if (prev === String(cols)) return;
   app.dataset.cols = cols;
 
-  // Two-chart grids: always at least 1 col, max 2 (these charts are paired)
-  var chartCols = cols >= 2 ? "repeat(2, 1fr)" : "repeat(1, 1fr)";
-  ["charts-main", "charts-member"].forEach(function (id) {
-    var el = document.getElementById(id);
-    if (el) el.style.gridTemplateColumns = chartCols;
-  });
-  // Summary grid: always show all 6 on 3+ cols, else wrap
+  // charts-main and charts-member column layout is handled entirely by CSS
+  // auto-fit minmax — no JS needed there.
+
+  // Summary grid: scale the 6 stat cards based on available width
   var summaryEl = document.getElementById("summary-grid");
   if (summaryEl) {
     if (cols >= 3) summaryEl.style.gridTemplateColumns = "repeat(6, 1fr)";
     else if (cols === 2) summaryEl.style.gridTemplateColumns = "repeat(3, 1fr)";
     else summaryEl.style.gridTemplateColumns = "repeat(2, 1fr)";
   }
-  // Resize all Chart.js instances so they redraw at new width
+
+  // Tell Chart.js to redraw at new width
   setTimeout(function () {
     Object.keys(charts).forEach(function (id) {
       if (charts[id]) charts[id].resize();
