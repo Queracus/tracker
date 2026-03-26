@@ -116,7 +116,7 @@
       <!-- Row 1: Hours by List + Hours per Label -->
       <div id="charts-top" class="grid gap-3 mb-3">
         <div class="chart-box">
-          <div class="chart-title">Hours by List</div>
+          <div class="chart-title">Hours per List</div>
           <div class="chart-canvas-wrap">
             <canvas id="chart-by-list"></canvas>
           </div>
@@ -134,7 +134,7 @@
         <div class="flex justify-between items-center mb-2.5">
           <span
             class="text-xs font-bold text-trello-muted dark:text-trello-subtle"
-            >Cards Over Time (Created / Completed / Assigned)</span
+            >Cards Over Time (Created / Assigned / Completed)</span
           >
           <div class="toggle-group">
             <button class="toggle-btn active" id="btn-per-week">Week</button>
@@ -156,9 +156,7 @@
           </div>
         </div>
         <div class="chart-box">
-          <div class="chart-title">
-            Cards per Member (Assigned vs Completed)
-          </div>
+          <div class="chart-title">Cards per Member (Assigned / Completed)</div>
           <div class="chart-canvas-wrap">
             <canvas id="chart-member-cards"></canvas>
           </div>
@@ -168,7 +166,7 @@
       <!-- By List -->
       <div class="section-title">By List</div>
       <div class="chart-box mb-3">
-        <div class="chart-title">Cards per List (Open vs Completed)</div>
+        <div class="chart-title">Cards per List (Open / Completed)</div>
         <div class="chart-canvas-wrap">
           <canvas id="chart-cards-per-list"></canvas>
         </div>
