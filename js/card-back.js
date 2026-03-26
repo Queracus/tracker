@@ -158,7 +158,7 @@ function minutesToDisplay(mins) {
 }
 
 // Format elapsed time progressively — only show units that are non-zero
-// ss → mm:ss → hh:mm:ss → dd:hh:mm:ss
+// e.g. 15s → 2min 15s → 1h 2min 15s → 3d 1h 2min 15s
 function formatTime(ms) {
   var safeMs = Math.max(0, ms);
   var totalSeconds = Math.floor(safeMs / 1000);
@@ -167,15 +167,12 @@ function formatTime(ms) {
   var minutes = Math.floor((totalSeconds % 3600) / 60);
   var seconds = totalSeconds % 60;
 
-  var s = String(seconds).padStart(2, "0");
-  var m = String(minutes).padStart(2, "0");
-  var h = String(hours).padStart(2, "0");
-  var d = String(days).padStart(2, "0");
-
-  if (days > 0) return d + ":" + h + ":" + m + ":" + s;
-  if (hours > 0) return h + ":" + m + ":" + s;
-  if (minutes > 0) return m + ":" + s;
-  return s;
+  var parts = [];
+  if (days > 0) parts.push(days + "d");
+  if (hours > 0) parts.push(hours + "h");
+  if (minutes > 0) parts.push(minutes + "min");
+  parts.push(seconds + "s");
+  return parts.join(" ");
 }
 
 function styleSlider(percentage) {
