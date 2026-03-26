@@ -193,9 +193,9 @@ canvas {
   color: #172b4d;
 }
 
-/* ── Date picker selects ── */
-.dp-sel {
-  padding: 5px 4px;
+/* ── Date picker native inputs ── */
+.dp-date {
+  padding: 5px 8px;
   border: 2px solid #dfe1e6;
   border-radius: 3px;
   font-size: 12px;
@@ -203,11 +203,8 @@ canvas {
   background: #fafbfc;
   color: #172b4d;
   cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  text-align: center;
 }
-.dp-sel:focus {
+.dp-date:focus {
   border-color: #0079bf;
   outline: none;
 }
@@ -224,9 +221,6 @@ canvas {
 .dark .chart-box {
   background: #282e33;
   box-shadow: none;
-}
-.dark .chart-canvas-wrap {
-  /* inherits correctly */
 }
 
 .dark .summary-value {
@@ -264,12 +258,13 @@ canvas {
   color: #b6c2cf;
 }
 
-.dark .dp-sel {
+.dark .dp-date {
   background: #22272b;
   border-color: #41474d;
   color: #b6c2cf;
+  color-scheme: dark;
 }
-.dark .dp-sel:focus {
+.dark .dp-date:focus {
   border-color: #0098ff;
 }
 

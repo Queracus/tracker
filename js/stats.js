@@ -192,78 +192,28 @@ function fetchAllPowerUpData(cardIds) {
 // FILTER
 // ─────────────────────────────────────────────
 // ─────────────────────────────────────────────
-// DATE PICKER HELPERS
+// DATE PICKER HELPERS — native <input type="date">
 // ─────────────────────────────────────────────
-var MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
-function buildDatePickers() {
-  var now = new Date();
-  var currentYear = now.getFullYear();
-  var yearRange = [];
-  for (var y = currentYear; y >= currentYear - 5; y--) yearRange.push(y);
-
-  ["from", "to"].forEach(function (id) {
-    var daySel = document.getElementById("date-" + id + "-day");
-    var monSel = document.getElementById("date-" + id + "-mon");
-    var yrSel = document.getElementById("date-" + id + "-yr");
-
-    for (var d = 1; d <= 31; d++) {
-      var o = document.createElement("option");
-      o.value = d;
-      o.textContent = String(d).padStart(2, "0");
-      daySel.appendChild(o);
-    }
-    MONTHS.forEach(function (m, i) {
-      var o = document.createElement("option");
-      o.value = i + 1;
-      o.textContent = m;
-      monSel.appendChild(o);
-    });
-    yearRange.forEach(function (y) {
-      var o = document.createElement("option");
-      o.value = y;
-      o.textContent = y;
-      yrSel.appendChild(o);
-    });
-  });
-}
-
 function setPickerDate(id, date) {
-  document.getElementById("date-" + id + "-day").value = date.getDate();
-  document.getElementById("date-" + id + "-mon").value = date.getMonth() + 1;
-  document.getElementById("date-" + id + "-yr").value = date.getFullYear();
+  document.getElementById("date-" + id).value = toInputDate(date);
 }
 
 function getPickerDate(id) {
-  var d = parseInt(document.getElementById("date-" + id + "-day").value, 10);
-  var m =
-    parseInt(document.getElementById("date-" + id + "-mon").value, 10) - 1;
-  var y = parseInt(document.getElementById("date-" + id + "-yr").value, 10);
-  if (isNaN(d) || isNaN(m) || isNaN(y)) return null;
-  return new Date(y, m, d);
+  var val = document.getElementById("date-" + id).value;
+  if (!val) return null;
+  var parts = val.split("-");
+  return new Date(
+    parseInt(parts[0], 10),
+    parseInt(parts[1], 10) - 1,
+    parseInt(parts[2], 10),
+  );
 }
 
 function clearPicker(id) {
-  ["day", "mon", "yr"].forEach(function (part) {
-    document.getElementById("date-" + id + "-" + part).selectedIndex = 0;
-  });
+  document.getElementById("date-" + id).value = "";
 }
 
 function initDateDefaults() {
-  buildDatePickers();
   var now = new Date();
   var from = new Date(now);
   from.setDate(from.getDate() - 90);
