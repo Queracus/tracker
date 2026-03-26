@@ -61,12 +61,24 @@ body {
 }
 
 /* ── Responsive chart grids — pure CSS, no JS column logic needed ── */
-#charts-main,
+#charts-top,
 #charts-member {
   display: grid;
   gap: 12px;
   /* Each chart is at least 480px wide; if two fit show two, otherwise one */
   grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+}
+
+/* Tables side by side */
+#tables-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+}
+
+/* Taller chart for the 3-trace cards-over-time */
+.chart-box--tall {
+  height: 420px;
 }
 
 /* ── Chart box ── */

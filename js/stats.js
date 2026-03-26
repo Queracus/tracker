@@ -216,7 +216,7 @@ function clearPicker(id) {
 function initDateDefaults() {
   var now = new Date();
   var from = new Date(now);
-  from.setDate(from.getDate() - 30);
+  from.setDate(from.getDate() - 90);
   setPickerDate("from", from);
   setPickerDate("to", now);
   dateFrom = from;
@@ -246,9 +246,9 @@ function buildUI() {
   var cards = filteredCards();
   renderSummary(cards);
   renderChartByList(cards);
-  renderChartCompleted(cards);
-  renderMemberSection(cards);
   renderLabelSection(cards);
+  renderCardsOverTime(cards);
+  renderMemberSection(cards);
   renderCardsPerList(cards);
   renderCardTable(cards);
 }
@@ -294,21 +294,107 @@ function renderChartByList(cards) {
   renderBarChart("chart-by-list", labels, data, "Hours");
 }
 
-// ── Chart: Cards completed per week or day ──
-function renderChartCompleted(cards) {
-  var done = cards.filter(function (c) {
-    return c.dueComplete && c.due;
+// ── Chart: Cards Created / Completed / Assigned over time (3 traces) ──
+function renderCardsOverTime(cards) {
+  var created = {},
+    completed = {},
+    assigned = {};
+
+  cards.forEach(function (c) {
+    // Created
+    var keyC =
+      completedView === "day"
+        ? toInputDate(c.createdAt)
+        : weekLabel(c.createdAt);
+    created[keyC] = (created[keyC] || 0) + 1;
+
+    // Completed (needs a due date and dueComplete)
+    if (c.dueComplete && c.due) {
+      var keyD =
+        completedView === "day" ? toInputDate(c.due) : weekLabel(c.due);
+      completed[keyD] = (completed[keyD] || 0) + 1;
+    }
+
+    // Assigned (has at least one member)
+    if (c.members.length > 0) {
+      var keyA =
+        completedView === "day"
+          ? toInputDate(c.createdAt)
+          : weekLabel(c.createdAt);
+      assigned[keyA] = (assigned[keyA] || 0) + 1;
+    }
   });
-  var map = {};
-  done.forEach(function (c) {
-    var key = completedView === "day" ? toInputDate(c.due) : weekLabel(c.due);
-    map[key] = (map[key] || 0) + 1;
+
+  // Union of all dates, sorted
+  var allDates = Array.from(
+    new Set(
+      Object.keys(created)
+        .concat(Object.keys(completed))
+        .concat(Object.keys(assigned)),
+    ),
+  ).sort();
+
+  var createdData = allDates.map(function (d) {
+    return created[d] || 0;
   });
-  var labels = Object.keys(map).sort();
-  var data = labels.map(function (l) {
-    return map[l];
+  var completedData = allDates.map(function (d) {
+    return completed[d] || 0;
   });
-  renderLineChart("chart-completed-week", labels, data, "Cards Done");
+  var assignedData = allDates.map(function (d) {
+    return assigned[d] || 0;
+  });
+
+  destroyChart("chart-cards-over-time");
+  var ctx = document.getElementById("chart-cards-over-time").getContext("2d");
+  charts["chart-cards-over-time"] = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: allDates,
+      datasets: [
+        {
+          label: "Created",
+          data: createdData,
+          borderColor: PALETTE[0],
+          backgroundColor: PALETTE[0] + "22",
+          borderWidth: 2,
+          fill: false,
+          tension: 0.3,
+          pointRadius: 3,
+          pointBackgroundColor: PALETTE[0],
+        },
+        {
+          label: "Completed",
+          data: completedData,
+          borderColor: PALETTE[1],
+          backgroundColor: PALETTE[1] + "22",
+          borderWidth: 2,
+          fill: false,
+          tension: 0.3,
+          pointRadius: 3,
+          pointBackgroundColor: PALETTE[1],
+        },
+        {
+          label: "Assigned",
+          data: assignedData,
+          borderColor: PALETTE[4],
+          backgroundColor: PALETTE[4] + "22",
+          borderWidth: 2,
+          fill: false,
+          tension: 0.3,
+          pointRadius: 3,
+          pointBackgroundColor: PALETTE[4],
+        },
+      ],
+    },
+    options: (function () {
+      var opts = baseChartOptions("Cards");
+      opts.plugins.legend = {
+        display: true,
+        labels: { color: legendColor, font: { size: 11 } },
+      };
+      return opts;
+    })(),
+  });
 }
 
 // ── Member section ──
@@ -698,11 +784,10 @@ function wireControls() {
       completedView = "week";
       this.classList.add("active");
       document.getElementById("btn-per-day").classList.remove("active");
-      renderChartCompleted(filteredCards());
-      // Force Chart.js to re-measure its container after the DOM settles
+      renderCardsOverTime(filteredCards());
       requestAnimationFrame(function () {
-        if (charts["chart-completed-week"])
-          charts["chart-completed-week"].resize();
+        if (charts["chart-cards-over-time"])
+          charts["chart-cards-over-time"].resize();
       });
     });
 
@@ -710,10 +795,10 @@ function wireControls() {
     completedView = "day";
     this.classList.add("active");
     document.getElementById("btn-per-week").classList.remove("active");
-    renderChartCompleted(filteredCards());
+    renderCardsOverTime(filteredCards());
     requestAnimationFrame(function () {
-      if (charts["chart-completed-week"])
-        charts["chart-completed-week"].resize();
+      if (charts["chart-cards-over-time"])
+        charts["chart-cards-over-time"].resize();
     });
   });
 }
@@ -860,7 +945,7 @@ function applyColCount(app) {
   if (prev === String(cols)) return;
   app.dataset.cols = cols;
 
-  // charts-main and charts-member column layout is handled entirely by CSS
+  // chart grids and tables-grid column layout is handled entirely by CSS
   // auto-fit minmax — no JS needed there.
 
   // Summary grid: scale the 6 stat cards based on available width

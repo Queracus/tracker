@@ -81,7 +81,7 @@
         </button>
       </div>
 
-      <!-- Summary cards — cols driven by JS -->
+      <!-- Summary cards -->
       <div
         id="summary-grid"
         class="grid gap-2.5 mb-4"
@@ -113,8 +113,8 @@
         </div>
       </div>
 
-      <!-- Charts: Hours by List + Completed -->
-      <div id="charts-main" class="grid gap-3 mb-3">
+      <!-- Row 1: Hours by List + Hours per Label -->
+      <div id="charts-top" class="grid gap-3 mb-3">
         <div class="chart-box">
           <div class="chart-title">Hours by List</div>
           <div class="chart-canvas-wrap">
@@ -122,19 +122,27 @@
           </div>
         </div>
         <div class="chart-box">
-          <div class="flex justify-between items-center mb-2.5">
-            <span
-              class="text-xs font-bold text-trello-muted dark:text-trello-subtle"
-              >Cards Completed</span
-            >
-            <div class="toggle-group">
-              <button class="toggle-btn active" id="btn-per-week">Week</button>
-              <button class="toggle-btn" id="btn-per-day">Day</button>
-            </div>
-          </div>
+          <div class="chart-title">Hours per Label</div>
           <div class="chart-canvas-wrap">
-            <canvas id="chart-completed-week"></canvas>
+            <canvas id="chart-label-hours"></canvas>
           </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Cards Created / Completed / Assigned over time — full width -->
+      <div class="chart-box mb-3 chart-box--tall">
+        <div class="flex justify-between items-center mb-2.5">
+          <span
+            class="text-xs font-bold text-trello-muted dark:text-trello-subtle"
+            >Cards Over Time (Created / Completed / Assigned)</span
+          >
+          <div class="toggle-group">
+            <button class="toggle-btn active" id="btn-per-week">Week</button>
+            <button class="toggle-btn" id="btn-per-day">Day</button>
+          </div>
+        </div>
+        <div class="chart-canvas-wrap">
+          <canvas id="chart-cards-over-time"></canvas>
         </div>
       </div>
 
@@ -156,68 +164,55 @@
           </div>
         </div>
       </div>
-      <div
-        id="member-table-wrap"
-        class="bg-white dark:bg-trello-card rounded-md shadow-sm overflow-x-auto mb-3"
-      >
-        <table class="stats-table" id="member-table">
-          <thead>
-            <tr>
-              <th>Member</th>
-              <th>Cards</th>
-              <th>Done</th>
-              <th>Hours Logged</th>
-              <th>Avg h/card</th>
-              <th>Over estimate</th>
-            </tr>
-          </thead>
-          <tbody id="member-table-body"></tbody>
-        </table>
-      </div>
-
-      <!-- By Label -->
-      <div class="section-title">By Label</div>
-      <div class="mb-3">
-        <div class="chart-box">
-          <div class="chart-title">Hours per Label</div>
-          <div class="chart-canvas-wrap">
-            <canvas id="chart-label-hours"></canvas>
-          </div>
-        </div>
-      </div>
 
       <!-- By List -->
       <div class="section-title">By List</div>
-      <div class="mb-3">
-        <div class="chart-box">
-          <div class="chart-title">Cards per List (Open vs Completed)</div>
-          <div class="chart-canvas-wrap">
-            <canvas id="chart-cards-per-list"></canvas>
-          </div>
+      <div class="chart-box mb-3">
+        <div class="chart-title">Cards per List (Open vs Completed)</div>
+        <div class="chart-canvas-wrap">
+          <canvas id="chart-cards-per-list"></canvas>
         </div>
       </div>
 
-      <!-- Card Detail -->
-      <div class="section-title">Card Detail</div>
-      <div
-        id="card-table-wrap"
-        class="bg-white dark:bg-trello-card rounded-md shadow-sm overflow-x-auto mb-3"
-      >
-        <table class="stats-table" id="card-table">
-          <thead>
-            <tr>
-              <th>Card</th>
-              <th>List</th>
-              <th>Members</th>
-              <th>Est (h)</th>
-              <th>Logged (h)</th>
-              <th>%</th>
-              <th>Done</th>
-              <th>Completed</th>
-            </tr>
-          </thead>
-          <tbody id="card-table-body"></tbody>
-        </table>
+      <!-- Member table + Card table side by side -->
+      <div class="section-title">Detail</div>
+      <div id="tables-grid" class="grid gap-3 mb-3">
+        <div
+          class="bg-white dark:bg-trello-card rounded-md shadow-sm overflow-x-auto"
+        >
+          <table class="stats-table" id="member-table">
+            <thead>
+              <tr>
+                <th>Member</th>
+                <th>Cards</th>
+                <th>Done</th>
+                <th>Hours Logged</th>
+                <th>Avg h/card</th>
+                <th>Over estimate</th>
+              </tr>
+            </thead>
+            <tbody id="member-table-body"></tbody>
+          </table>
+        </div>
+        <div
+          class="bg-white dark:bg-trello-card rounded-md shadow-sm overflow-x-auto"
+        >
+          <table class="stats-table" id="card-table">
+            <thead>
+              <tr>
+                <th>Card</th>
+                <th>List</th>
+                <th>Members</th>
+                <th>Est (h)</th>
+                <th>Logged (h)</th>
+                <th>%</th>
+                <th>Done</th>
+                <th>Completed</th>
+              </tr>
+            </thead>
+            <tbody id="card-table-body"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
