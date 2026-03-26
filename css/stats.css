@@ -1,41 +1,18 @@
-/* Fill the full modal iframe */
-html,
-body {
-  width: 100%;
-  max-width: 100%;
-  min-width: 500px;
-  height: 100%;
-}
-
-* {
+/* ── Reset ── */
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
-
+html,
 body {
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-size: 13px;
-  color: #172b4d;
-  background: #f4f5f7;
-  padding: 0;
+  width: 100%;
+  min-width: 500px;
 }
 
-.hidden {
-  display: none !important;
-}
-
-/* Loading */
-.loading-screen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  gap: 14px;
-  color: #5e6c84;
-}
+/* ── Loading spinner ── */
 .spinner {
   width: 36px;
   height: 36px;
@@ -50,82 +27,7 @@ body {
   }
 }
 
-/* App */
-#app {
-  padding: 14px 24px 30px;
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-/* Toolbar */
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #fff;
-  border-radius: 6px;
-  padding: 10px 14px;
-  margin-bottom: 14px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.toolbar-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.toolbar label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #5e6c84;
-}
-/* native date inputs removed — using custom dp-sel pickers */
-
-.btn {
-  padding: 6px 14px;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 12px;
-}
-.btn-primary {
-  background: #0079bf;
-  color: #fff;
-}
-.btn-primary:hover {
-  background: #026aa7;
-}
-.btn-secondary {
-  background: #091e420a;
-  color: #172b4d;
-}
-.btn-secondary:hover {
-  background: #091e4214;
-}
-
-/* Summary grid */
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 10px;
-  margin-bottom: 14px;
-}
-#app[data-cols="1"] .summary-grid {
-  grid-template-columns: repeat(2, 1fr);
-}
-#app[data-cols="2"] .summary-grid {
-  grid-template-columns: repeat(3, 1fr);
-}
-#app[data-cols="3"] .summary-grid {
-  grid-template-columns: repeat(6, 1fr);
-}
-#app[data-cols="4"] .summary-grid {
-  grid-template-columns: repeat(6, 1fr);
-}
+/* ── Summary cards ── */
 .summary-card {
   background: #fff;
   border-radius: 6px;
@@ -148,7 +50,7 @@ body {
   letter-spacing: 0.4px;
 }
 
-/* Charts */
+/* ── Section title ── */
 .section-title {
   font-size: 13px;
   font-weight: 700;
@@ -157,47 +59,16 @@ body {
   letter-spacing: 0.5px;
   margin: 16px 0 8px;
 }
-.charts-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr; /* default: 2 cols */
-  gap: 12px;
-  margin-bottom: 12px;
-  width: 100%;
-}
 
-/* Drive column count from #app[data-cols] set by ResizeObserver */
-#app[data-cols="1"] .charts-row {
-  grid-template-columns: 1fr;
-}
-#app[data-cols="2"] .charts-row {
-  grid-template-columns: 1fr 1fr;
-}
-#app[data-cols="3"] .charts-row {
-  grid-template-columns: 1fr 1fr 1fr;
-}
-#app[data-cols="4"] .charts-row {
-  grid-template-columns: 1fr 1fr 1fr 1fr;
-}
-
-/* Wide charts always span full row regardless of col count */
-#app[data-cols="1"] .chart-box-wide,
-#app[data-cols="2"] .chart-box-wide,
-#app[data-cols="3"] .chart-box-wide,
-#app[data-cols="4"] .chart-box-wide {
-  grid-column: 1 / -1;
-}
-
+/* ── Chart box ── */
 .chart-box {
   background: #fff;
   border-radius: 6px;
   padding: 14px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  min-height: clamp(260px, 20vw, 360px);
+  min-height: 300px;
   display: flex;
   flex-direction: column;
-}
-.chart-box-wide {
-  grid-column: 1 / -1;
 }
 .chart-title {
   font-size: 12px;
@@ -207,18 +78,10 @@ body {
 }
 canvas {
   flex: 1;
-  max-height: clamp(220px, 16vw, 320px);
+  max-height: 300px;
 }
 
-/* Tables */
-#member-table-wrap,
-#card-table-wrap {
-  background: #fff;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  overflow-x: auto;
-  margin-bottom: 10px;
-}
+/* ── Tables ── */
 .stats-table {
   width: 100%;
   border-collapse: collapse;
@@ -245,6 +108,7 @@ canvas {
   background: #f8f9fa;
 }
 
+/* ── Badges ── */
 .badge-done {
   color: #61bd4f;
   font-weight: 700;
@@ -260,6 +124,7 @@ canvas {
   color: #a5adba;
 }
 
+/* ── Member avatar ── */
 .member-avatar {
   display: inline-flex;
   align-items: center;
@@ -278,67 +143,8 @@ canvas {
   justify-content: center;
   flex-shrink: 0;
 }
-.label-pip {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  margin-right: 4px;
-  vertical-align: middle;
-}
 
-/* Dark mode */
-body.dark-mode {
-  background: #1d2125;
-  color: #b6c2cf;
-}
-body.dark-mode .toolbar,
-body.dark-mode .summary-card,
-body.dark-mode .chart-box,
-body.dark-mode #member-table-wrap,
-body.dark-mode #card-table-wrap {
-  background: #282e33;
-  box-shadow: none;
-}
-body.dark-mode .toolbar label,
-body.dark-mode .summary-label,
-body.dark-mode .section-title,
-body.dark-mode .chart-title {
-  color: #9fadbc;
-}
-
-body.dark-mode .btn-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: #b6c2cf;
-}
-body.dark-mode .stats-table th {
-  background: #1d2125;
-  border-color: #41474d;
-  color: #9fadbc;
-}
-body.dark-mode .stats-table td {
-  border-color: #2c333a;
-}
-body.dark-mode .stats-table tr:hover td {
-  background: #2c333a;
-}
-body.dark-mode .summary-value {
-  color: #0098ff;
-}
-body.dark-mode .btn-primary {
-  background: #0098ff;
-}
-
-/* ── Chart title row with toggle ── */
-.chart-title-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #5e6c84;
-}
+/* ── Week/Day toggle pill ── */
 .toggle-group {
   display: flex;
   gap: 2px;
@@ -368,23 +174,7 @@ body.dark-mode .btn-primary {
   color: #172b4d;
 }
 
-body.dark-mode .toggle-group {
-  background: #1d2125;
-}
-body.dark-mode .toggle-btn.active {
-  background: #282e33;
-  color: #0098ff;
-}
-body.dark-mode .toggle-btn {
-  color: #9fadbc;
-}
-
-/* ── Toolbar date pickers ── */
-.date-picker-wrap {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
+/* ── Date picker selects ── */
 .dp-sel {
   padding: 5px 4px;
   border: 2px solid #dfe1e6;
@@ -402,21 +192,66 @@ body.dark-mode .toggle-btn {
   border-color: #0079bf;
   outline: none;
 }
-.dp-day {
-  width: 46px;
-}
-.dp-mon {
-  width: 52px;
-}
-.dp-yr {
-  width: 62px;
+
+/* ── Utility ── */
+.hidden {
+  display: none !important;
 }
 
-body.dark-mode .dp-sel {
+/* ═══════════════════════════════════
+   DARK MODE  (class="dark" on <html>)
+   ═══════════════════════════════════ */
+.dark .summary-card,
+.dark .chart-box {
+  background: #282e33;
+  box-shadow: none;
+}
+
+.dark .summary-value {
+  color: #0098ff;
+}
+.dark .summary-label,
+.dark .section-title,
+.dark .chart-title {
+  color: #9fadbc;
+}
+
+.dark .stats-table th {
+  background: #1d2125;
+  border-color: #41474d;
+  color: #9fadbc;
+}
+.dark .stats-table td {
+  border-color: #2c333a;
+}
+.dark .stats-table tr:hover td {
+  background: #2c333a;
+}
+
+.dark .toggle-group {
+  background: #1d2125;
+}
+.dark .toggle-btn {
+  color: #9fadbc;
+}
+.dark .toggle-btn.active {
+  background: #282e33;
+  color: #0098ff;
+}
+.dark .toggle-btn:hover:not(.active) {
+  color: #b6c2cf;
+}
+
+.dark .dp-sel {
   background: #22272b;
   border-color: #41474d;
   color: #b6c2cf;
 }
-body.dark-mode .dp-sel:focus {
+.dark .dp-sel:focus {
   border-color: #0098ff;
+}
+
+.dark .spinner {
+  border-color: #41474d;
+  border-top-color: #0098ff;
 }

@@ -45,7 +45,8 @@ var completedView = "week"; // "week" | "day"
 // ─────────────────────────────────────────────
 t.render(function () {
   var ctx = t.getContext();
-  if (ctx && ctx.theme === "dark") document.body.classList.add("dark-mode");
+  if (ctx && ctx.theme === "dark")
+    document.documentElement.classList.add("dark");
 
   loadData();
 });
@@ -592,7 +593,7 @@ function renderCardTable(cards) {
 // ─────────────────────────────────────────────
 // CHART HELPERS
 // ─────────────────────────────────────────────
-var isDark = document.body.classList.contains("dark-mode");
+var isDark = document.documentElement.classList.contains("dark");
 var gridColor = isDark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)";
 var tickColor = isDark ? "#9fadbc" : "#5e6c84";
 var legendColor = isDark ? "#9fadbc" : "#5e6c84";
@@ -889,24 +890,40 @@ function showLoading(show) {
 function getColCount(width) {
   if (width >= 1400) return 4;
   if (width >= 1000) return 3;
-  if (width >= 600) return 2;
+  if (width >= 620) return 2;
   return 1;
 }
 
 function applyColCount(app) {
   var cols = getColCount(app.offsetWidth);
-  if (app.dataset.cols !== String(cols)) {
-    app.dataset.cols = cols;
-    // Notify Chart.js to resize all active charts
+  var prev = app.dataset.cols;
+  if (prev === String(cols)) return;
+  app.dataset.cols = cols;
+
+  var chartCols = "repeat(" + cols + ", 1fr)";
+  // Two-chart grids
+  ["charts-main", "charts-member"].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.style.gridTemplateColumns = chartCols;
+  });
+  // Summary grid: always show all 6 on 3+ cols, else wrap
+  var summaryEl = document.getElementById("summary-grid");
+  if (summaryEl) {
+    if (cols >= 3) summaryEl.style.gridTemplateColumns = "repeat(6, 1fr)";
+    else if (cols === 2) summaryEl.style.gridTemplateColumns = "repeat(3, 1fr)";
+    else summaryEl.style.gridTemplateColumns = "repeat(2, 1fr)";
+  }
+  // Resize all Chart.js instances so they redraw at new width
+  setTimeout(function () {
     Object.keys(charts).forEach(function (id) {
       if (charts[id]) charts[id].resize();
     });
-  }
+  }, 50);
 }
 
 function initResizeObserver() {
   var app = document.getElementById("app");
-  applyColCount(app); // run once immediately
+  applyColCount(app);
   if (window.ResizeObserver) {
     var ro = new ResizeObserver(function () {
       applyColCount(app);

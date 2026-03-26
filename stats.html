@@ -2,44 +2,119 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              trello: {
+                blue: "#0079bf",
+                bluedark: "#0098ff",
+                green: "#61bd4f",
+                red: "#eb5a46",
+                text: "#172b4d",
+                muted: "#5e6c84",
+                subtle: "#9fadbc",
+                bg: "#f4f5f7",
+                bgdark: "#1d2125",
+                card: "#282e33",
+                border: "#dfe1e6",
+                bdark: "#41474d",
+              },
+            },
+          },
+        },
+      };
+    </script>
     <link rel="stylesheet" href="./css/stats.css" />
     <script src="https://p.trellocdn.com/power-up.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   </head>
-  <body>
-    <div id="loading" class="loading-screen">
+  <body
+    class="bg-trello-bg dark:bg-trello-bgdark text-trello-text dark:text-[#b6c2cf] text-[13px]"
+  >
+    <!-- Loading -->
+    <div
+      id="loading"
+      class="flex flex-col items-center justify-center h-screen gap-4 text-trello-muted"
+    >
       <div class="spinner"></div>
       <p>Loading board data…</p>
     </div>
 
-    <div id="app" class="hidden">
+    <div id="app" class="hidden w-full mx-auto px-6 pt-4 pb-10">
       <!-- Toolbar -->
-      <div class="toolbar">
-        <div class="toolbar-group">
-          <label>From</label>
-          <div class="date-picker-wrap">
-            <select id="date-from-day" class="dp-sel dp-day"></select>
-            <select id="date-from-mon" class="dp-sel dp-mon"></select>
-            <select id="date-from-yr" class="dp-sel dp-yr"></select>
+      <div
+        class="flex justify-between items-center flex-wrap gap-2 bg-white dark:bg-trello-card rounded-md shadow-sm px-4 py-2.5 mb-4"
+      >
+        <div class="flex items-center flex-wrap gap-2">
+          <label
+            class="text-xs font-semibold text-trello-muted dark:text-trello-subtle"
+            >From</label
+          >
+          <div class="flex items-center gap-1">
+            <select
+              id="date-from-day"
+              class="dp-sel"
+              style="width: 46px"
+            ></select>
+            <select
+              id="date-from-mon"
+              class="dp-sel"
+              style="width: 58px"
+            ></select>
+            <select
+              id="date-from-yr"
+              class="dp-sel"
+              style="width: 66px"
+            ></select>
           </div>
-          <label>To</label>
-          <div class="date-picker-wrap">
-            <select id="date-to-day" class="dp-sel dp-day"></select>
-            <select id="date-to-mon" class="dp-sel dp-mon"></select>
-            <select id="date-to-yr" class="dp-sel dp-yr"></select>
+          <label
+            class="text-xs font-semibold text-trello-muted dark:text-trello-subtle"
+            >To</label
+          >
+          <div class="flex items-center gap-1">
+            <select
+              id="date-to-day"
+              class="dp-sel"
+              style="width: 46px"
+            ></select>
+            <select
+              id="date-to-mon"
+              class="dp-sel"
+              style="width: 58px"
+            ></select>
+            <select id="date-to-yr" class="dp-sel" style="width: 66px"></select>
           </div>
-          <button id="apply-filter" class="btn btn-primary">Apply</button>
-          <button id="reset-filter" class="btn btn-secondary">All time</button>
-        </div>
-        <div class="toolbar-group">
-          <button id="export-csv" class="btn btn-secondary">
-            ⬇ Export CSV
+          <button
+            id="apply-filter"
+            class="px-3 py-1.5 bg-trello-blue dark:bg-trello-bluedark text-white text-xs font-semibold rounded border-0 cursor-pointer hover:opacity-90"
+          >
+            Apply
+          </button>
+          <button
+            id="reset-filter"
+            class="px-3 py-1.5 bg-black/[0.04] dark:bg-white/10 text-trello-text dark:text-[#b6c2cf] text-xs font-semibold rounded border-0 cursor-pointer hover:bg-black/[0.08]"
+          >
+            All time
           </button>
         </div>
+        <button
+          id="export-csv"
+          class="px-3 py-1.5 bg-black/[0.04] dark:bg-white/10 text-trello-text dark:text-[#b6c2cf] text-xs font-semibold rounded border-0 cursor-pointer hover:bg-black/[0.08]"
+        >
+          ⬇ Export CSV
+        </button>
       </div>
 
-      <!-- Summary cards -->
-      <div class="summary-grid">
+      <!-- Summary cards — cols driven by JS -->
+      <div
+        id="summary-grid"
+        class="grid gap-2.5 mb-4"
+        style="grid-template-columns: repeat(6, 1fr)"
+      >
         <div class="summary-card">
           <div class="summary-value" id="stat-total-cards">—</div>
           <div class="summary-label">Total Cards</div>
@@ -66,15 +141,22 @@
         </div>
       </div>
 
-      <!-- Charts row -->
-      <div class="charts-row">
+      <!-- Charts: Hours by List + Completed — cols driven by JS -->
+      <div
+        id="charts-main"
+        class="grid gap-3 mb-3"
+        style="grid-template-columns: repeat(2, 1fr)"
+      >
         <div class="chart-box">
           <div class="chart-title">Hours by List</div>
           <canvas id="chart-by-list"></canvas>
         </div>
         <div class="chart-box">
-          <div class="chart-title-row">
-            <span>Cards Completed</span>
+          <div class="flex justify-between items-center mb-2.5">
+            <span
+              class="text-xs font-bold text-trello-muted dark:text-trello-subtle"
+              >Cards Completed</span
+            >
             <div class="toggle-group">
               <button class="toggle-btn active" id="btn-per-week">Week</button>
               <button class="toggle-btn" id="btn-per-day">Day</button>
@@ -84,9 +166,13 @@
         </div>
       </div>
 
-      <!-- Per-member section -->
+      <!-- By Member -->
       <div class="section-title">By Member</div>
-      <div class="charts-row">
+      <div
+        id="charts-member"
+        class="grid gap-3 mb-3"
+        style="grid-template-columns: repeat(2, 1fr)"
+      >
         <div class="chart-box">
           <div class="chart-title">Hours Logged per Member</div>
           <canvas id="chart-member-hours"></canvas>
@@ -98,7 +184,10 @@
           <canvas id="chart-member-cards"></canvas>
         </div>
       </div>
-      <div id="member-table-wrap">
+      <div
+        id="member-table-wrap"
+        class="bg-white dark:bg-trello-card rounded-md shadow-sm overflow-x-auto mb-3"
+      >
         <table class="stats-table" id="member-table">
           <thead>
             <tr>
@@ -114,27 +203,30 @@
         </table>
       </div>
 
-      <!-- Per-label section -->
+      <!-- By Label -->
       <div class="section-title">By Label</div>
-      <div class="charts-row">
-        <div class="chart-box chart-box-wide">
+      <div class="mb-3">
+        <div class="chart-box">
           <div class="chart-title">Hours per Label</div>
           <canvas id="chart-label-hours"></canvas>
         </div>
       </div>
 
-      <!-- Per-list section -->
+      <!-- By List -->
       <div class="section-title">By List</div>
-      <div class="charts-row">
-        <div class="chart-box chart-box-wide">
+      <div class="mb-3">
+        <div class="chart-box">
           <div class="chart-title">Cards per List (Open vs Completed)</div>
           <canvas id="chart-cards-per-list"></canvas>
         </div>
       </div>
 
-      <!-- Card list -->
+      <!-- Card Detail -->
       <div class="section-title">Card Detail</div>
-      <div id="card-table-wrap">
+      <div
+        id="card-table-wrap"
+        class="bg-white dark:bg-trello-card rounded-md shadow-sm overflow-x-auto mb-3"
+      >
         <table class="stats-table" id="card-table">
           <thead>
             <tr>
