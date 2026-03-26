@@ -55,6 +55,7 @@ window.TrelloPowerUp.initialize(
             icon: createProgressBarIcon(percentage),
             text: percentage + "%",
             color: percentage > 100 ? "red" : "green",
+            refresh: 600,
           },
         ];
       });
