@@ -54,6 +54,13 @@ label {
   font-size: 16px;
 }
 
+.elapsed-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #5e6c84;
+  white-space: nowrap;
+}
+
 .elapsed-inline {
   font-size: 13px;
   font-weight: 600;
@@ -240,6 +247,7 @@ body.dark-mode .divider {
   border-color: #41474d;
 }
 body.dark-mode .progress-text,
+body.dark-mode .elapsed-label,
 body.dark-mode .elapsed-inline,
 body.dark-mode .estimated-label {
   color: #9fadbc;
@@ -383,7 +391,6 @@ body.dark-mode .estimated-hint {
   color: #eb5a46;
 }
 
-/* Dark mode additions */
 body.dark-mode .dt-date,
 body.dark-mode .dt-sel {
   background: #22272b;
