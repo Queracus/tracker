@@ -110,7 +110,7 @@ body {
 /* Summary grid */
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 10px;
   margin-bottom: 14px;
 }
@@ -147,7 +147,7 @@ body {
 }
 .charts-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
   gap: 12px;
   margin-bottom: 12px;
   width: 100%;
@@ -157,7 +157,7 @@ body {
   border-radius: 6px;
   padding: 14px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  min-height: 300px;
+  min-height: clamp(280px, 22vw, 380px);
   display: flex;
   flex-direction: column;
 }
@@ -172,7 +172,7 @@ body {
 }
 canvas {
   flex: 1;
-  max-height: 280px;
+  max-height: clamp(240px, 18vw, 340px);
 }
 
 /* Tables */
