@@ -17,9 +17,17 @@
       <div class="toolbar">
         <div class="toolbar-group">
           <label>From</label>
-          <input type="date" id="date-from" />
+          <div class="date-picker-wrap">
+            <select id="date-from-day" class="dp-sel dp-day"></select>
+            <select id="date-from-mon" class="dp-sel dp-mon"></select>
+            <select id="date-from-yr" class="dp-sel dp-yr"></select>
+          </div>
           <label>To</label>
-          <input type="date" id="date-to" />
+          <div class="date-picker-wrap">
+            <select id="date-to-day" class="dp-sel dp-day"></select>
+            <select id="date-to-mon" class="dp-sel dp-mon"></select>
+            <select id="date-to-yr" class="dp-sel dp-yr"></select>
+          </div>
           <button id="apply-filter" class="btn btn-primary">Apply</button>
           <button id="reset-filter" class="btn btn-secondary">All time</button>
         </div>

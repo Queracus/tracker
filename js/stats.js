@@ -189,22 +189,91 @@ function fetchAllPowerUpData(cardIds) {
 // ─────────────────────────────────────────────
 // FILTER
 // ─────────────────────────────────────────────
+// ─────────────────────────────────────────────
+// DATE PICKER HELPERS
+// ─────────────────────────────────────────────
+var MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+function buildDatePickers() {
+  var now = new Date();
+  var currentYear = now.getFullYear();
+  var yearRange = [];
+  for (var y = currentYear; y >= currentYear - 5; y--) yearRange.push(y);
+
+  ["from", "to"].forEach(function (id) {
+    var daySel = document.getElementById("date-" + id + "-day");
+    var monSel = document.getElementById("date-" + id + "-mon");
+    var yrSel = document.getElementById("date-" + id + "-yr");
+
+    for (var d = 1; d <= 31; d++) {
+      var o = document.createElement("option");
+      o.value = d;
+      o.textContent = String(d).padStart(2, "0");
+      daySel.appendChild(o);
+    }
+    MONTHS.forEach(function (m, i) {
+      var o = document.createElement("option");
+      o.value = i + 1;
+      o.textContent = m;
+      monSel.appendChild(o);
+    });
+    yearRange.forEach(function (y) {
+      var o = document.createElement("option");
+      o.value = y;
+      o.textContent = y;
+      yrSel.appendChild(o);
+    });
+  });
+}
+
+function setPickerDate(id, date) {
+  document.getElementById("date-" + id + "-day").value = date.getDate();
+  document.getElementById("date-" + id + "-mon").value = date.getMonth() + 1;
+  document.getElementById("date-" + id + "-yr").value = date.getFullYear();
+}
+
+function getPickerDate(id) {
+  var d = parseInt(document.getElementById("date-" + id + "-day").value, 10);
+  var m =
+    parseInt(document.getElementById("date-" + id + "-mon").value, 10) - 1;
+  var y = parseInt(document.getElementById("date-" + id + "-yr").value, 10);
+  if (isNaN(d) || isNaN(m) || isNaN(y)) return null;
+  return new Date(y, m, d);
+}
+
+function clearPicker(id) {
+  ["day", "mon", "yr"].forEach(function (part) {
+    document.getElementById("date-" + id + "-" + part).selectedIndex = 0;
+  });
+}
+
 function initDateDefaults() {
-  // Default: last 90 days
+  buildDatePickers();
   var now = new Date();
   var from = new Date(now);
   from.setDate(from.getDate() - 90);
-  document.getElementById("date-from").value = toInputDate(from);
-  document.getElementById("date-to").value = toInputDate(now);
+  setPickerDate("from", from);
+  setPickerDate("to", now);
   dateFrom = from;
   dateTo = now;
 }
 
 function readDates() {
-  var f = document.getElementById("date-from").value;
-  var t2 = document.getElementById("date-to").value;
-  dateFrom = f ? new Date(f) : null;
-  dateTo = t2 ? new Date(t2) : null;
+  dateFrom = getPickerDate("from");
+  dateTo = getPickerDate("to");
   if (dateTo) dateTo.setHours(23, 59, 59, 999);
 }
 
@@ -296,7 +365,6 @@ function renderMemberSection(cards) {
 
   cards.forEach(function (card) {
     if (card.members.length === 0) {
-      // unassigned bucket
       var key = "__unassigned__";
       if (!members[key])
         members[key] = {
@@ -326,7 +394,6 @@ function renderMemberSection(cards) {
         };
       members[m.id].cards++;
       if (card.dueComplete) members[m.id].done++;
-      // Split logged time equally among members for fairness
       members[m.id].loggedMs += card.loggedMs / card.members.length;
       members[m.id].estimatedMs += card.estimatedMs / card.members.length;
       if (card.isOver) members[m.id].over++;
@@ -664,8 +731,8 @@ function wireControls() {
   document
     .getElementById("reset-filter")
     .addEventListener("click", function () {
-      document.getElementById("date-from").value = "";
-      document.getElementById("date-to").value = "";
+      clearPicker("from");
+      clearPicker("to");
       dateFrom = null;
       dateTo = null;
       buildUI();
