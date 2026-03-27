@@ -38,8 +38,8 @@ var allMembers = {}; // id → {id, fullName, username}
 var allLists = {}; // id → {id, name}
 var dateFrom = null;
 var dateTo = null;
-var completedView = "week"; // "week" | "day"
-var rangeView = "active"; // "active" | "full"
+var completedView = "day"; // "week" | "day"
+var rangeView = "full"; // "active" | "full"
 
 // ─────────────────────────────────────────────
 // BOOT
