@@ -301,23 +301,33 @@ function renderCardsOverTime(cards) {
     completed = {},
     assigned = {};
 
-  cards.forEach(function (c) {
-    // Created
-    var keyC =
-      completedView === "day"
-        ? toInputDate(c.createdAt)
-        : weekLabel(c.createdAt);
-    created[keyC] = (created[keyC] || 0) + 1;
+  // Helper: check a date is within the active filter range
+  function inRange(d) {
+    if (!d) return false;
+    if (dateFrom && d < dateFrom) return false;
+    if (dateTo && d > dateTo) return false;
+    return true;
+  }
 
-    // Completed (needs a due date and dueComplete)
-    if (c.dueComplete && c.due) {
+  cards.forEach(function (c) {
+    // Created — only plot if createdAt is within the filter range
+    if (inRange(c.createdAt)) {
+      var keyC =
+        completedView === "day"
+          ? toInputDate(c.createdAt)
+          : weekLabel(c.createdAt);
+      created[keyC] = (created[keyC] || 0) + 1;
+    }
+
+    // Completed — only plot if due date is within the filter range
+    if (c.dueComplete && c.due && inRange(c.due)) {
       var keyD =
         completedView === "day" ? toInputDate(c.due) : weekLabel(c.due);
       completed[keyD] = (completed[keyD] || 0) + 1;
     }
 
-    // Assigned (has at least one member)
-    if (c.members.length > 0) {
+    // Assigned — same date anchor as Created, same range check
+    if (c.members.length > 0 && inRange(c.createdAt)) {
       var keyA =
         completedView === "day"
           ? toInputDate(c.createdAt)
