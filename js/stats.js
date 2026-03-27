@@ -143,6 +143,8 @@ function loadData() {
             pct: pct,
             isOver: pct !== null && pct > 100,
             hasLog: loggedMs > 0,
+            isRunning: isRunning,
+            startTime: startTime,
           };
         });
 
@@ -240,6 +242,27 @@ function filteredCards() {
   });
 }
 
+// Returns logged milliseconds for a card, counting only time log entries
+// whose start falls within the active date filter range.
+function filteredLoggedMs(card) {
+  var from = dateFrom ? dateFrom.getTime() : null;
+  var to = dateTo ? dateTo.getTime() : null;
+  var ms = card.timeLog.reduce(function (acc, e) {
+    var entryStart = new Date(e.start).getTime();
+    if (from && entryStart < from) return acc;
+    if (to && entryStart > to) return acc;
+    return acc + (new Date(e.end).getTime() - entryStart);
+  }, 0);
+  // Add currently-running timer if its start is in range
+  if (card.isRunning && card.startTime) {
+    var st = card.startTime;
+    if ((!from || st >= from) && (!to || st <= to)) {
+      ms += Date.now() - st;
+    }
+  }
+  return ms;
+}
+
 // ─────────────────────────────────────────────
 // UI BUILD
 // ─────────────────────────────────────────────
@@ -260,17 +283,18 @@ function renderSummary(cards) {
     return c.dueComplete;
   }).length;
   var totalH = cards.reduce(function (a, c) {
-    return a + c.loggedH;
+    return a + filteredLoggedMs(c) / 3600000;
   }, 0);
   var withLog = cards.filter(function (c) {
-    return c.hasLog;
+    return filteredLoggedMs(c) > 0;
   });
   var avgH = withLog.length > 0 ? totalH / withLog.length : 0;
   var over = cards.filter(function (c) {
-    return c.isOver;
+    var fms = filteredLoggedMs(c);
+    return c.estimatedMs > 0 && fms > c.estimatedMs;
   }).length;
   var noLog = cards.filter(function (c) {
-    return !c.hasLog;
+    return filteredLoggedMs(c) === 0;
   }).length;
 
   set("stat-total-cards", cards.length);
@@ -286,7 +310,7 @@ function renderChartByList(cards) {
   var map = {};
   cards.forEach(function (c) {
     if (!map[c.listName]) map[c.listName] = 0;
-    map[c.listName] += c.loggedH;
+    map[c.listName] += filteredLoggedMs(c) / 3600000;
   });
   var labels = Object.keys(map);
   var data = labels.map(function (l) {
@@ -450,7 +474,7 @@ function renderMemberSection(cards) {
         };
       members[key].cards++;
       if (card.dueComplete) members[key].done++;
-      members[key].loggedMs += card.loggedMs;
+      members[key].loggedMs += filteredLoggedMs(card);
       members[key].estimatedMs += card.estimatedMs;
       if (card.isOver) members[key].over++;
       return;
@@ -467,7 +491,7 @@ function renderMemberSection(cards) {
         };
       members[m.id].cards++;
       if (card.dueComplete) members[m.id].done++;
-      members[m.id].loggedMs += card.loggedMs / card.members.length;
+      members[m.id].loggedMs += filteredLoggedMs(card) / card.members.length;
       members[m.id].estimatedMs += card.estimatedMs / card.members.length;
       if (card.isOver) members[m.id].over++;
     });
@@ -567,7 +591,7 @@ function renderLabelSection(cards) {
     if (card.labels.length === 0) {
       var k = "__none__";
       if (!map[k]) map[k] = { name: "No label", color: null, loggedMs: 0 };
-      map[k].loggedMs += card.loggedMs;
+      map[k].loggedMs += filteredLoggedMs(card);
       return;
     }
     card.labels.forEach(function (lbl) {
@@ -578,7 +602,7 @@ function renderLabelSection(cards) {
           color: lbl.color,
           loggedMs: 0,
         };
-      map[k].loggedMs += card.loggedMs / card.labels.length;
+      map[k].loggedMs += filteredLoggedMs(card) / card.labels.length;
     });
   });
 
@@ -613,15 +637,18 @@ function renderCardTable(cards) {
         })
         .join(", ") || "—";
     var estH = card.estimatedMs > 0 ? fmtH(card.estimatedMs / 3600000) : "—";
-    var logH = card.hasLog
-      ? fmtH(card.loggedH)
-      : '<span class="text-muted">—</span>';
+    var fms = filteredLoggedMs(card);
+    var logH =
+      fms > 0 ? fmtH(fms / 3600000) : '<span class="text-muted">—</span>';
+    var fpct =
+      card.estimatedMs > 0 ? Math.round((fms / card.estimatedMs) * 100) : null;
+    var fOver = fpct !== null && fpct > 100;
     var pct =
-      card.pct !== null
+      fpct !== null
         ? '<span class="' +
-          (card.isOver ? "badge-over" : "badge-ok") +
+          (fOver ? "badge-over" : "badge-ok") +
           '">' +
-          card.pct +
+          fpct +
           "%</span>"
         : "—";
     var done = card.dueComplete
