@@ -129,16 +129,24 @@
         </div>
       </div>
 
-      <!-- Row 2: Cards Created / Completed / Assigned over time — full width -->
+      <!-- Row 2: Cards Created / Assigned / Completed over time — full width -->
       <div class="chart-box mb-3 chart-box--tall">
         <div class="flex justify-between items-center mb-2.5">
           <span
             class="text-xs font-bold text-trello-muted dark:text-trello-subtle"
             >Cards Over Time (Created / Assigned / Completed)</span
           >
-          <div class="toggle-group">
-            <button class="toggle-btn active" id="btn-per-week">Week</button>
-            <button class="toggle-btn" id="btn-per-day">Day</button>
+          <div class="flex items-center gap-2">
+            <div class="toggle-group">
+              <button class="toggle-btn active" id="btn-per-week">Week</button>
+              <button class="toggle-btn" id="btn-per-day">Day</button>
+            </div>
+            <div class="toggle-group">
+              <button class="toggle-btn active" id="btn-range-active">
+                Active
+              </button>
+              <button class="toggle-btn" id="btn-range-full">Full</button>
+            </div>
           </div>
         </div>
         <div class="chart-canvas-wrap">

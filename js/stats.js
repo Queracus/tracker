@@ -39,6 +39,7 @@ var allLists = {}; // id → {id, name}
 var dateFrom = null;
 var dateTo = null;
 var completedView = "week"; // "week" | "day"
+var rangeView = "active"; // "active" | "full"
 
 // ─────────────────────────────────────────────
 // BOOT
@@ -325,14 +326,38 @@ function renderCardsOverTime(cards) {
     }
   });
 
-  // Union of all dates, sorted
-  var allDates = Array.from(
-    new Set(
-      Object.keys(created)
-        .concat(Object.keys(completed))
-        .concat(Object.keys(assigned)),
-    ),
-  ).sort();
+  var allKeys = Object.keys(created)
+    .concat(Object.keys(completed))
+    .concat(Object.keys(assigned));
+
+  var allDates;
+  if (allKeys.length === 0) {
+    allDates = [];
+  } else if (rangeView === "active") {
+    // Only days/weeks where something happened
+    allDates = Array.from(new Set(allKeys)).sort();
+  } else {
+    // Full: every day (or week) between earliest and latest event
+    allKeys.sort();
+    var rangeStart = new Date(allKeys[0]);
+    var rangeEnd = new Date(allKeys[allKeys.length - 1]);
+    allDates = [];
+    var cur = new Date(rangeStart);
+    var step = completedView === "day" ? 1 : 7;
+    while (cur <= rangeEnd) {
+      allDates.push(toInputDate(cur));
+      cur.setDate(cur.getDate() + step);
+    }
+    if (completedView === "week") {
+      allDates = Array.from(
+        new Set(
+          allDates.map(function (d) {
+            return weekLabel(new Date(d));
+          }),
+        ),
+      ).sort();
+    }
+  }
 
   var createdData = allDates.map(function (d) {
     return created[d] || 0;
@@ -777,6 +802,32 @@ function wireControls() {
     });
 
   document.getElementById("export-csv").addEventListener("click", exportCSV);
+
+  document
+    .getElementById("btn-range-active")
+    .addEventListener("click", function () {
+      rangeView = "active";
+      this.classList.add("active");
+      document.getElementById("btn-range-full").classList.remove("active");
+      renderCardsOverTime(filteredCards());
+      requestAnimationFrame(function () {
+        if (charts["chart-cards-over-time"])
+          charts["chart-cards-over-time"].resize();
+      });
+    });
+
+  document
+    .getElementById("btn-range-full")
+    .addEventListener("click", function () {
+      rangeView = "full";
+      this.classList.add("active");
+      document.getElementById("btn-range-active").classList.remove("active");
+      renderCardsOverTime(filteredCards());
+      requestAnimationFrame(function () {
+        if (charts["chart-cards-over-time"])
+          charts["chart-cards-over-time"].resize();
+      });
+    });
 
   document
     .getElementById("btn-per-week")
