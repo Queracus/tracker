@@ -319,7 +319,7 @@ function renderChartByList(cards) {
   renderBarChart("chart-by-list", labels, data, "Hours");
 }
 
-// ── Chart: Cards Created / Completed / Assigned over time (3 traces) ──
+// ── Chart: Cards Created / Assigned / Completed over time (3 traces) ──
 function renderCardsOverTime(cards) {
   var created = {},
     completed = {},
