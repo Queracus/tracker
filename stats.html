@@ -2,32 +2,23 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            colors: {
-              trello: {
-                blue: "#0079bf",
-                bluedark: "#0098ff",
-                green: "#61bd4f",
-                red: "#eb5a46",
-                text: "#172b4d",
-                muted: "#5e6c84",
-                subtle: "#9fadbc",
-                bg: "#f4f5f7",
-                bgdark: "#1d2125",
-                card: "#282e33",
-                border: "#dfe1e6",
-                bdark: "#41474d",
-              },
-            },
-          },
-        },
-      };
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+      @theme {
+        --color-trello-blue: #0079bf;
+        --color-trello-bluedark: #0098ff;
+        --color-trello-green: #61bd4f;
+        --color-trello-red: #eb5a46;
+        --color-trello-text: #172b4d;
+        --color-trello-muted: #5e6c84;
+        --color-trello-subtle: #9fadbc;
+        --color-trello-bg: #f4f5f7;
+        --color-trello-bgdark: #1d2125;
+        --color-trello-card: #282e33;
+        --color-trello-border: #dfe1e6;
+        --color-trello-bdark: #41474d;
+      }
+    </style>
     <link rel="stylesheet" href="./css/stats.css" />
     <script src="https://p.trellocdn.com/power-up.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
