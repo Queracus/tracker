@@ -217,7 +217,7 @@ function clearPicker(id) {
 function initDateDefaults() {
   var now = new Date();
   var from = new Date(now);
-  from.setDate(from.getDate() - 90);
+  from.setDate(from.getDate() - 21);
   setPickerDate("from", from);
   setPickerDate("to", now);
   dateFrom = from;
