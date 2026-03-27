@@ -371,10 +371,12 @@ function renderCardsOverTime(cards) {
     // Only days/weeks where something happened
     allDates = Array.from(new Set(allKeys)).sort();
   } else {
-    // Full: every day (or week) between earliest and latest event
+    // Full: every day (or week) from dateFrom (or first event) to dateTo (or last event)
     allKeys.sort();
-    var rangeStart = new Date(allKeys[0]);
-    var rangeEnd = new Date(allKeys[allKeys.length - 1]);
+    var rangeStart = dateFrom ? new Date(dateFrom) : new Date(allKeys[0]);
+    var rangeEnd = dateTo
+      ? new Date(dateTo)
+      : new Date(allKeys[allKeys.length - 1]);
     allDates = [];
     var cur = new Date(rangeStart);
     var step = completedView === "day" ? 1 : 7;
