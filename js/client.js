@@ -30,7 +30,7 @@ window.TrelloPowerUp.initialize(
   {
     "card-badges": function (t, options) {
       return t.get("card", "shared").then(function (data) {
-        if (!data || !data.estimated || data.estimated <= 0) return [];
+        if (!data) return [];
 
         var timeLog = data.timeLog || [];
         var isRunning = data.isRunning || false;
@@ -47,17 +47,30 @@ window.TrelloPowerUp.initialize(
           totalElapsed += Date.now() - startTime;
         }
 
-        var estimatedMs = data.estimated * 60 * 1000;
-        var percentage = Math.floor((totalElapsed / estimatedMs) * 100);
+        var badges = [];
 
-        return [
-          {
+        // ── Running indicator badge ──
+        if (isRunning) {
+          badges.push({
+            text: "●",
+            color: "green",
+            refresh: 10,
+          });
+        }
+
+        // ── Progress badge (only when estimate is set) ──
+        if (data.estimated && data.estimated > 0) {
+          var estimatedMs = data.estimated * 60 * 1000;
+          var percentage = Math.floor((totalElapsed / estimatedMs) * 100);
+          badges.push({
             icon: createProgressBarIcon(percentage),
             text: percentage + "%",
-            color: percentage > 100 ? "red" : "green", // Fallback color if SVG fails
+            color: percentage > 100 ? "red" : "green",
             refresh: 600,
-          },
-        ];
+          });
+        }
+
+        return badges;
       });
     },
 

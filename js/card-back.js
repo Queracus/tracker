@@ -276,21 +276,37 @@ function render() {
       if (timeLog.length === 0) {
         logContainer.innerHTML = "<p>No time entries yet.</p>";
       } else {
+        // Render newest-first but track original index for deletion
         timeLog
           .slice()
           .reverse()
-          .forEach((entry) => {
+          .forEach((entry, reversedIdx) => {
+            var originalIdx = timeLog.length - 1 - reversedIdx;
             var durationMs =
               new Date(entry.end).getTime() - new Date(entry.start).getTime();
             var entryEl = document.createElement("div");
             entryEl.className = "log-entry";
             entryEl.innerHTML = `
-              <span class="log-duration">${millisecondsToHms(durationMs)} (${entry.type})</span>
+              <div class="log-entry-header">
+                <span class="log-duration">${millisecondsToHms(durationMs)} (${entry.type})</span>
+                <button class="log-delete-btn" data-idx="${originalIdx}" title="Delete this entry">✕</button>
+              </div>
               <span>Start: ${formatLogDate(entry.start)}</span>
               <span>End: ${formatLogDate(entry.end)}</span>
             `;
             logContainer.appendChild(entryEl);
           });
+
+        // Attach delete handlers after DOM is built
+        logContainer.querySelectorAll(".log-delete-btn").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var idx = parseInt(this.getAttribute("data-idx"), 10);
+            t.get("card", "shared", "timeLog").then(function (log) {
+              var updated = (log || []).filter(function (_, i) { return i !== idx; });
+              t.set("card", "shared", "timeLog", updated).then(render);
+            });
+          });
+        });
       }
     }
   });

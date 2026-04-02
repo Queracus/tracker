@@ -234,6 +234,38 @@ input:focus {
 .log-entry .log-duration {
   font-weight: bold;
 }
+.log-entry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+.log-delete-btn {
+  background: none;
+  border: none;
+  color: #a5adba;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.log-delete-btn:hover {
+  background: #eb5a46;
+  color: #fff;
+}
+body.dark-mode .log-delete-btn {
+  color: #5e6c84;
+}
+body.dark-mode .log-delete-btn:hover {
+  background: #eb5a46;
+  color: #fff;
+}
 .hidden {
   display: none;
 }
