@@ -143,7 +143,7 @@ function getPickerDate(id) {
 function initDateDefaults() {
   var now = new Date();
   var from = new Date(now);
-  from.setDate(from.getDate() - 30);
+  from.setDate(from.getDate() - 14);
   setPickerDate("from", from);
   setPickerDate("to", now);
   dateFrom = from;
