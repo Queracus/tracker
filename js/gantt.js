@@ -21,6 +21,7 @@ var allLists = {}; // id → {id, name}
 var groupBy = "member"; // "member" | "card"
 var dateFrom = null;
 var dateTo = null;
+var hiddenMembers = {}; // memberKey → true when filtered out
 
 // ── Boot ──
 t.render(function () {
@@ -143,7 +144,7 @@ function getPickerDate(id) {
 function initDateDefaults() {
   var now = new Date();
   var from = new Date(now);
-  from.setDate(from.getDate() - 14);
+  from.setDate(from.getDate() - 30);
   setPickerDate("from", from);
   setPickerDate("to", now);
   dateFrom = from;
@@ -259,9 +260,11 @@ function render() {
   // Header
   inner.appendChild(buildHeader(minT, maxT));
 
-  // Rows
+  // Rows — each group wrapped in a section div for filter hiding
   groups.forEach(function (group) {
-    // Group header
+    var section = document.createElement("div");
+    section.className = "gantt-group-section";
+
     var gh = document.createElement("div");
     gh.className = "gantt-group-header";
     var avatarColor = colorMap[group.colorKey] || PALETTE[0];
@@ -272,13 +275,17 @@ function render() {
       initials(group.label) +
       "</span>" +
       esc(group.label);
-    inner.appendChild(gh);
+    section.appendChild(gh);
 
-    // Card rows within this group
     group.rows.forEach(function (row) {
-      inner.appendChild(buildRow(row, minT, totalSpan, colorMap));
+      section.appendChild(buildRow(row, minT, totalSpan, colorMap));
     });
+
+    inner.appendChild(section);
   });
+
+  // Apply any active filters to the freshly rendered bars
+  applyMemberFilter();
 
   wireTooltip();
 }
@@ -315,10 +322,13 @@ function sessionColorKey(session) {
   return cardColorKey(session.card);
 }
 
-// ── Legend ──
+// ── Legend — interactive filter ──
+// hiddenMembers keys match individual member IDs (groupBy=member) or
+// cardColorKey values (groupBy=card). Clicking a legend pill toggles visibility.
 function renderLegend(colorMap) {
   var legend = document.getElementById("legend");
   legend.innerHTML = "";
+
   Object.keys(colorMap).forEach(function (key) {
     var label;
     if (groupBy === "member") {
@@ -339,8 +349,11 @@ function renderLegend(colorMap) {
       });
       label = card ? card.name : key;
     }
+
     var item = document.createElement("div");
-    item.className = "legend-item";
+    item.className = "legend-item" + (hiddenMembers[key] ? " is-off" : "");
+    item.title = hiddenMembers[key] ? "Click to show" : "Click to hide";
+    item.dataset.key = key;
     item.innerHTML =
       '<span class="legend-dot" style="background:' +
       colorMap[key] +
@@ -348,7 +361,38 @@ function renderLegend(colorMap) {
       "<span>" +
       esc(label) +
       "</span>";
+
+    item.addEventListener("click", function () {
+      var k = this.dataset.key;
+      if (hiddenMembers[k]) {
+        delete hiddenMembers[k];
+      } else {
+        hiddenMembers[k] = true;
+      }
+      // Re-apply visibility to bars without full re-render (fast)
+      applyMemberFilter();
+      // Update legend pill state
+      this.classList.toggle("is-off", !!hiddenMembers[k]);
+      this.title = hiddenMembers[k] ? "Click to show" : "Click to hide";
+    });
+
     legend.appendChild(item);
+  });
+}
+
+// Show/hide bars based on hiddenMembers without rebuilding the DOM
+function applyMemberFilter() {
+  document.querySelectorAll(".gantt-bar").forEach(function (bar) {
+    var key = bar.dataset.filterKey;
+    bar.style.display = key && hiddenMembers[key] ? "none" : "";
+  });
+  // Also hide/show group sections and rows that become fully empty
+  document.querySelectorAll(".gantt-group-section").forEach(function (section) {
+    var anyVisible = false;
+    section.querySelectorAll(".gantt-bar").forEach(function (bar) {
+      if (bar.style.display !== "none") anyVisible = true;
+    });
+    section.style.display = anyVisible ? "" : "none";
   });
 }
 
@@ -610,6 +654,7 @@ function buildRow(row, minT, totalSpan, colorMap) {
     bar.style.opacity = session.type === "manual" ? "0.7" : "1";
 
     // Store tooltip data
+    bar.dataset.filterKey = sessionColorKey(session);
     bar.dataset.cardName = session.card.name;
     bar.dataset.listName = session.card.listName;
     bar.dataset.members =
@@ -720,6 +765,7 @@ function wireControls() {
     .getElementById("btn-group-member")
     .addEventListener("click", function () {
       groupBy = "member";
+      hiddenMembers = {};
       this.classList.add("active");
       document.getElementById("btn-group-card").classList.remove("active");
       render();
@@ -729,6 +775,7 @@ function wireControls() {
     .getElementById("btn-group-card")
     .addEventListener("click", function () {
       groupBy = "card";
+      hiddenMembers = {};
       this.classList.add("active");
       document.getElementById("btn-group-member").classList.remove("active");
       render();

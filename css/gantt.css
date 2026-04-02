@@ -9,9 +9,10 @@ html,
 body {
   width: 100%;
   min-width: 500px;
+  min-height: 100vh;
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   color: #172b4d;
   background: #f4f5f7;
 }
@@ -54,8 +55,12 @@ body.dark-mode {
 .app-wrap {
   width: 100%;
   max-width: 96%;
+  min-height: 100vh;
   margin: 0 auto;
   padding: 16px 16px 40px;
+}
+.dark-mode .app-wrap {
+  background: #1d2125;
 }
 
 /* ── Toolbar ── */
@@ -85,7 +90,7 @@ body.dark-mode {
 }
 
 .toolbar-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: #5e6c84;
   white-space: nowrap;
@@ -99,7 +104,7 @@ body.dark-mode {
   padding: 6px 12px;
   border: none;
   border-radius: 3px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -130,7 +135,7 @@ body.dark-mode {
   padding: 5px 8px;
   border: 2px solid #dfe1e6;
   border-radius: 3px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   background: #fafbfc;
   color: #172b4d;
@@ -162,7 +167,7 @@ body.dark-mode {
   padding: 3px 10px;
   border: none;
   border-radius: 3px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   background: transparent;
@@ -202,13 +207,15 @@ body.dark-mode {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   color: #5e6c84;
+  cursor: pointer;
+  user-select: none;
 }
 .legend-dot {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -234,7 +241,7 @@ body.dark-mode {
 
 #gantt-inner {
   min-width: 600px;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 /* Header row */
@@ -257,7 +264,7 @@ body.dark-mode {
   padding: 6px 12px;
   font-weight: 700;
   color: #5e6c84;
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.4px;
   border-right: 1px solid #dfe1e6;
@@ -289,7 +296,7 @@ body.dark-mode {
   background: #c1c7d0;
 }
 .gantt-tick-label {
-  font-size: 10px;
+  font-size: 11px;
   color: #7a869a;
   white-space: nowrap;
   margin-top: 2px;
@@ -311,7 +318,7 @@ body.dark-mode {
   padding: 5px 12px;
   gap: 7px;
   font-weight: 700;
-  font-size: 11px;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: #5e6c84;
@@ -355,7 +362,7 @@ body.dark-mode {
   flex-shrink: 0;
   width: 220px;
   padding: 4px 12px;
-  font-size: 11px;
+  font-size: 13px;
   color: #172b4d;
   border-right: 1px solid #dfe1e6;
   white-space: nowrap;
@@ -369,7 +376,7 @@ body.dark-mode {
 }
 
 .row-list-name {
-  font-size: 10px;
+  font-size: 11px;
   color: #7a869a;
   display: block;
   white-space: nowrap;
@@ -473,6 +480,23 @@ body.dark-mode {
   color: #a8bace;
   font-size: 11px;
   display: block;
+}
+
+/* ── Interactive legend ── */
+.legend-item {
+  border: 2px solid transparent;
+  border-radius: 20px;
+  padding: 3px 10px 3px 7px;
+  transition:
+    opacity 0.15s,
+    border-color 0.15s,
+    background 0.15s;
+}
+.legend-item:hover {
+  border-color: currentColor;
+}
+.legend-item.is-off {
+  opacity: 0.35;
 }
 
 .hidden {
