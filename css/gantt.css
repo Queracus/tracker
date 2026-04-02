@@ -420,6 +420,13 @@ body.dark-mode {
 .dark-mode .gantt-gridline {
   background: #2c333a;
 }
+.gantt-gridline--thick {
+  width: 2px;
+  background: #c1c7d0;
+}
+.dark-mode .gantt-gridline--thick {
+  background: #41474d;
+}
 
 /* Session bar */
 .gantt-bar {

@@ -711,15 +711,15 @@ function buildRow(row, minT, mapper, colorMap) {
     });
   }
 
-  // Grid lines — 2h when range ≤ 4 days, 6h up to 2 weeks, daily beyond that.
-  // This keeps lines useful at short ranges without flooding wide views.
+  // Grid lines — 2h when range ≤ 8 days, 6h up to 2 weeks, daily beyond that.
+  // In 2h mode: every 4h line (midnight, 4am, 8am…) is thick, alternate ones thin.
   var rangeMs = displaySpan;
   var GRID_INTERVAL =
     rangeMs <= 8 * 86400000
-      ? 2 * 3600000 // ≤4 days  → every 2h
+      ? 2 * 3600000
       : rangeMs <= 14 * 86400000
-        ? 6 * 3600000 // ≤2 weeks → every 6h
-        : 86400000; // wider    → daily
+        ? 6 * 3600000
+        : 86400000;
   var firstGrid = Math.ceil(minT / GRID_INTERVAL) * GRID_INTERVAL;
   for (
     var ts = firstGrid;
@@ -731,7 +731,10 @@ function buildRow(row, minT, mapper, colorMap) {
     var pct = (dispPos / displaySpan) * 100;
     if (pct < 0 || pct > 100) continue;
     var gl = document.createElement("div");
-    gl.className = "gantt-gridline";
+    // In 2h mode, mark every other line (every 4h) as thick
+    var isThick =
+      GRID_INTERVAL === 2 * 3600000 ? new Date(ts).getHours() % 4 === 0 : true;
+    gl.className = "gantt-gridline" + (isThick ? " gantt-gridline--thick" : "");
     gl.style.left = pct + "%";
     tlEl.appendChild(gl);
   }
