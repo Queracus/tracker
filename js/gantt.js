@@ -595,12 +595,12 @@ function buildHeader(minT, maxT, mapper) {
   }
 
   // Tick labels — match the grid line logic so labels sit exactly on thick lines.
-  // ≤8 days: label every 4h (on the thick lines). ≤2 weeks: every 6h. Wider: daily.
+  // ≤4 days: label every 4h (on the thick lines). ≤2 weeks: every 6h. Wider: daily.
   var realSpan = maxT - minT;
   var THICK_HOURS = [0, 4, 8, 12, 14, 16, 20];
   var tickInterval =
-    realSpan <= 8 * 86400000
-      ? 4 * 3600000 // ≤8 days  → every 4h
+    realSpan <= 4 * 86400000
+      ? 4 * 3600000 // ≤4 days  → every 4h
       : realSpan <= 14 * 86400000
         ? 6 * 3600000 // ≤2 weeks → every 6h
         : 86400000; // wider    → daily
