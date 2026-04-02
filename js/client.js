@@ -1,7 +1,7 @@
 // Helper to draw a dynamic progress bar for the card front
 function createProgressBarIcon(percentage) {
   var w = 40;
-  var h = 10;
+  var h = 14;
   var fillW = Math.round((Math.min(percentage, 100) / 100) * w);
   var fillColor = percentage > 100 ? "#eb5a46" : "#61bd4f";
 
