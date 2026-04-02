@@ -52,7 +52,7 @@ window.TrelloPowerUp.initialize(
         // ── Running indicator badge ──
         if (isRunning) {
           badges.push({
-            text: "●",
+            text: "⌚",
             color: "green",
             refresh: 10,
           });
