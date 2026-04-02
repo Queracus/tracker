@@ -733,7 +733,9 @@ function buildRow(row, minT, mapper, colorMap) {
     var gl = document.createElement("div");
     // In 2h mode, mark every other line (every 4h) as thick
     var isThick =
-      GRID_INTERVAL === 2 * 3600000 ? new Date(ts).getHours() % 4 !== 0 : true;
+      GRID_INTERVAL === 2 * 3600000
+        ? [0, 4, 8, 12, 14, 16, 20].indexOf(new Date(ts).getHours()) !== -1
+        : true;
     gl.className = "gantt-gridline" + (isThick ? " gantt-gridline--thick" : "");
     gl.style.left = pct + "%";
     tlEl.appendChild(gl);
