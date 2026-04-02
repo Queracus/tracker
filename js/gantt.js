@@ -284,19 +284,24 @@ function render() {
 }
 
 // ── Colour map ──
+// Colour is always keyed by the card's sorted member set (or card id in card mode).
+// This ensures a card shared by Alice+Bob always gets the same colour regardless
+// of the order members were added to the card.
+function cardColorKey(card) {
+  if (groupBy === "card") return card.id;
+  if (!card.members.length) return "__unassigned__";
+  return card.members
+    .map(function (m) {
+      return m.id;
+    })
+    .sort()
+    .join("+");
+}
+
 function buildColorMap(sessions) {
   var keys = [];
   sessions.forEach(function (s) {
-    var key =
-      groupBy === "member"
-        ? s.card.members.length
-          ? s.card.members
-              .map(function (m) {
-                return m.id;
-              })
-              .join("+")
-          : "__unassigned__"
-        : s.card.id;
+    var key = cardColorKey(s.card);
     if (keys.indexOf(key) === -1) keys.push(key);
   });
   var map = {};
@@ -307,16 +312,7 @@ function buildColorMap(sessions) {
 }
 
 function sessionColorKey(session) {
-  if (groupBy === "member") {
-    return session.card.members.length
-      ? session.card.members
-          .map(function (m) {
-            return m.id;
-          })
-          .join("+")
-      : "__unassigned__";
-  }
-  return session.card.id;
+  return cardColorKey(session.card);
 }
 
 // ── Legend ──
@@ -357,80 +353,98 @@ function renderLegend(colorMap) {
 }
 
 // ── Groups ──
+// Group by member: one section per individual member; cards shared by multiple
+//   members appear under each of them, but always as ONE row with ALL sessions.
+// Group by card: one section per card, all sessions on one row.
+// In both modes a card occupies exactly one row — bars are never split.
 function buildGroups(sessions) {
   var groupMap = {};
   var groupOrder = [];
 
-  sessions.forEach(function (session) {
-    var groupKey, groupLabel, colorKey;
+  function memberKey(card) {
+    if (!card.members.length) return "__unassigned__";
+    return card.members
+      .map(function (m) {
+        return m.id;
+      })
+      .sort()
+      .join("+");
+  }
+  function memberLabel(card) {
+    if (!card.members.length) return "Unassigned";
+    return card.members
+      .map(function (m) {
+        return m.fullName || m.username;
+      })
+      .join(" & ");
+  }
 
-    if (groupBy === "member") {
-      if (session.card.members.length === 0) {
-        groupKey = "__unassigned__";
-        groupLabel = "Unassigned";
-      } else {
-        groupKey = session.card.members
-          .map(function (m) {
-            return m.id;
-          })
-          .join("+");
-        groupLabel = session.card.members
-          .map(function (m) {
-            return m.fullName || m.username;
-          })
-          .join(" & ");
+  if (groupBy === "member") {
+    // One section per individual member
+    sessions.forEach(function (session) {
+      var memberList = session.card.members.length
+        ? session.card.members
+        : [{ id: "__unassigned__", fullName: "Unassigned" }];
+
+      memberList.forEach(function (member) {
+        var gKey = member.id;
+        var gLabel = member.fullName || member.username || "Unassigned";
+
+        if (!groupMap[gKey]) {
+          groupMap[gKey] = {
+            key: gKey,
+            label: gLabel,
+            colorKey: gKey,
+            rowMap: {},
+          };
+          groupOrder.push(gKey);
+        }
+
+        // One row per card inside this member's section — all sessions together
+        var rowKey = session.card.id;
+        if (!groupMap[gKey].rowMap[rowKey]) {
+          groupMap[gKey].rowMap[rowKey] = {
+            key: rowKey,
+            label: session.card.name,
+            listName: session.card.listName,
+            colorKey: memberKey(session.card),
+            sessions: [],
+          };
+        }
+        // Deduplicate: same session can appear via multiple members
+        var already = groupMap[gKey].rowMap[rowKey].sessions.some(function (s) {
+          return s.start === session.start && s.end === session.end;
+        });
+        if (!already) groupMap[gKey].rowMap[rowKey].sessions.push(session);
+      });
+    });
+  } else {
+    // One section (and one row) per card
+    sessions.forEach(function (session) {
+      var gKey = session.card.id;
+
+      if (!groupMap[gKey]) {
+        groupMap[gKey] = {
+          key: gKey,
+          label: session.card.name,
+          colorKey: memberKey(session.card),
+          rowMap: {},
+        };
+        groupOrder.push(gKey);
       }
-      colorKey = groupKey;
-    } else {
-      // Group by card
-      groupKey = session.card.id;
-      groupLabel = session.card.name;
-      colorKey = session.card.id;
-    }
 
-    if (!groupMap[groupKey]) {
-      groupMap[groupKey] = {
-        key: groupKey,
-        label: groupLabel,
-        colorKey: colorKey,
-        rowMap: {},
-      };
-      groupOrder.push(groupKey);
-    }
-
-    // Within each group, rows = cards (when grouping by member) or members (when grouping by card)
-    var rowKey =
-      groupBy === "member"
-        ? session.card.id
-        : session.card.members.length
-          ? session.card.members
-              .map(function (m) {
-                return m.id;
-              })
-              .join("+")
-          : "__unassigned__";
-    var rowLabel =
-      groupBy === "member"
-        ? session.card.name
-        : session.card.members.length
-          ? session.card.members
-              .map(function (m) {
-                return m.fullName || m.username;
-              })
-              .join(" & ")
-          : "Unassigned";
-    var rowListName = groupBy === "member" ? session.card.listName : "";
-
-    if (!groupMap[groupKey].rowMap[rowKey]) {
-      groupMap[groupKey].rowMap[rowKey] = {
-        key: rowKey,
-        label: rowLabel,
-        listName: rowListName,
-        sessions: [],
-      };
-    }
-    groupMap[groupKey].rowMap[rowKey].sessions.push(session);
-  });
+      if (!groupMap[gKey].rowMap[gKey]) {
+        groupMap[gKey].rowMap[gKey] = {
+          key: gKey,
+          label: memberLabel(session.card),
+          listName: session.card.listName,
+          colorKey: memberKey(session.card),
+          sessions: [],
+        };
+      }
+      groupMap[gKey].rowMap[gKey].sessions.push(session);
+    });
+  }
 
   return groupOrder.map(function (gk) {
     var g = groupMap[gk];
