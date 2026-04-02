@@ -715,7 +715,7 @@ function buildRow(row, minT, mapper, colorMap) {
   // This keeps lines useful at short ranges without flooding wide views.
   var rangeMs = displaySpan;
   var GRID_INTERVAL =
-    rangeMs <= 4 * 86400000
+    rangeMs <= 8 * 86400000
       ? 2 * 3600000 // ≤4 days  → every 2h
       : rangeMs <= 14 * 86400000
         ? 6 * 3600000 // ≤2 weeks → every 6h
