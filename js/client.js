@@ -1,29 +1,10 @@
-// Helper to draw a dynamic progress bar for the card front
-function createProgressBarIcon(percentage) {
-  var w = 40;
-  var h = 14;
-  var fillW = Math.round((Math.min(percentage, 100) / 100) * w);
-  var fillColor = percentage > 100 ? "#eb5a46" : "#61bd4f";
-
-  var svg =
-    '<svg width="' +
-    w +
-    '" height="' +
-    h +
-    '" xmlns="http://www.w3.org/2000/svg">' +
-    '<rect width="' +
-    w +
-    '" height="' +
-    h +
-    '" fill="#ebecf0" rx="3"/>' +
-    '<rect width="' +
-    fillW +
-    '" height="' +
-    h +
-    '" fill="' +
-    fillColor +
-    '" rx="3"/></svg>';
-  return "data:image/svg+xml;base64," + btoa(svg);
+// Build a compact text-only progress bar so both badges render with identical
+// Trello-native centering (no icon slot = no extra left padding).
+// e.g. "▓▓▓▓▓░░░░░ 50%"
+function createProgressBarText(percentage) {
+  var filled = Math.round(Math.min(percentage, 100) / 10);
+  var empty = 10 - filled;
+  return "▓".repeat(filled) + "░".repeat(empty) + " " + percentage + "%";
 }
 
 window.TrelloPowerUp.initialize(
@@ -52,7 +33,7 @@ window.TrelloPowerUp.initialize(
         // ── Running indicator badge ──
         if (isRunning) {
           badges.push({
-            text: "⌚",
+            text: "⏱️ ",
             color: "green",
             refresh: 10,
           });
@@ -63,10 +44,9 @@ window.TrelloPowerUp.initialize(
           var estimatedMs = data.estimated * 60 * 1000;
           var percentage = Math.floor((totalElapsed / estimatedMs) * 100);
           badges.push({
-            icon: createProgressBarIcon(percentage),
-            text: percentage + "%",
+            text: createProgressBarText(percentage),
             color: percentage > 100 ? "red" : "green",
-            refresh: 600,
+            refresh: 60,
           });
         }
 
