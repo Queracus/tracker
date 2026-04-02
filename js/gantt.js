@@ -594,33 +594,57 @@ function buildHeader(minT, maxT, mapper) {
     });
   }
 
-  // Tick marks
-  var intervals = [
-    60 * 1000,
-    5 * 60 * 1000,
-    15 * 60 * 1000,
-    30 * 60 * 1000,
-    3600 * 1000,
-    3 * 3600 * 1000,
-    6 * 3600 * 1000,
-    12 * 3600 * 1000,
-    86400 * 1000,
-    2 * 86400 * 1000,
-    7 * 86400 * 1000,
-  ];
+  // Tick labels — match the grid line logic so labels sit exactly on thick lines.
+  // ≤8 days: label every 4h (on the thick lines). ≤2 weeks: every 6h. Wider: daily.
   var realSpan = maxT - minT;
-  var interval =
-    intervals.find(function (iv) {
-      return realSpan / iv <= 16;
-    }) || 7 * 86400 * 1000;
-  var firstTick = Math.ceil(minT / interval) * interval;
+  var THICK_HOURS = [0, 4, 8, 12, 14, 16, 20];
+  var tickInterval =
+    realSpan <= 8 * 86400000
+      ? 4 * 3600000 // ≤8 days  → every 4h
+      : realSpan <= 14 * 86400000
+        ? 6 * 3600000 // ≤2 weeks → every 6h
+        : 86400000; // wider    → daily
 
-  for (var ts = firstTick; ts <= maxT; ts += interval) {
-    // Skip ticks that fall inside a hidden weekend block
+  var firstTick = Math.ceil(minT / tickInterval) * tickInterval;
+
+  // In 4h mode, snap first tick to the nearest THICK_HOURS boundary
+  if (tickInterval === 4 * 3600000) {
+    var d0 = new Date(firstTick);
+    var h = d0.getHours();
+    // Find next hour in THICK_HOURS >= h
+    var nextThick = THICK_HOURS.find(function (th) {
+      return th >= h;
+    });
+    if (nextThick === undefined) {
+      // wrap to next day
+      firstTick = new Date(
+        d0.getFullYear(),
+        d0.getMonth(),
+        d0.getDate() + 1,
+        THICK_HOURS[0],
+      ).getTime();
+    } else {
+      firstTick = new Date(
+        d0.getFullYear(),
+        d0.getMonth(),
+        d0.getDate(),
+        nextThick,
+      ).getTime();
+    }
+  }
+
+  for (var ts = firstTick; ts <= maxT; ts += tickInterval) {
     if (hideWeekends && isWeekendMs(ts)) continue;
+
+    // In 4h mode only label ticks that land on a THICK_HOURS hour
+    if (tickInterval === 4 * 3600000) {
+      var hr = new Date(ts).getHours();
+      if (THICK_HOURS.indexOf(hr) === -1) continue;
+    }
 
     var dispPos = mapper.toDisplay(ts);
     var pct = (dispPos / displaySpan) * 100;
+    if (pct < 0 || pct > 100) continue;
 
     var tick = document.createElement("div");
     tick.className = "gantt-tick";
@@ -631,7 +655,7 @@ function buildHeader(minT, maxT, mapper) {
 
     var lbl = document.createElement("div");
     lbl.className = "gantt-tick-label";
-    lbl.textContent = formatTickLabel(new Date(ts), interval);
+    lbl.textContent = formatTickLabel(new Date(ts), tickInterval);
 
     tick.appendChild(line);
     tick.appendChild(lbl);
@@ -644,24 +668,27 @@ function buildHeader(minT, maxT, mapper) {
 
 function formatTickLabel(d, interval) {
   if (interval < 3600000) {
+    // sub-hour: time only
     return d.toLocaleTimeString(navigator.language, {
       hour: "2-digit",
       minute: "2-digit",
     });
   }
   if (interval < 86400000) {
-    return (
-      d.toLocaleDateString(navigator.language, {
+    // hourly intervals: show date only at midnight, time only otherwise
+    if (d.getHours() === 0 && d.getMinutes() === 0) {
+      return d.toLocaleDateString(navigator.language, {
+        weekday: "short",
         month: "short",
         day: "numeric",
-      }) +
-      " " +
-      d.toLocaleTimeString(navigator.language, {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    );
+      });
+    }
+    return d.toLocaleTimeString(navigator.language, {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }
+  // daily+
   return d.toLocaleDateString(navigator.language, {
     month: "short",
     day: "numeric",
@@ -711,11 +738,11 @@ function buildRow(row, minT, mapper, colorMap) {
     });
   }
 
-  // Grid lines — 2h when range ≤ 8 days, 6h up to 2 weeks, daily beyond that.
+  // Grid lines — 2h when range ≤ 4 days, 6h up to 2 weeks, daily beyond that.
   // In 2h mode: every 4h line (midnight, 4am, 8am…) is thick, alternate ones thin.
   var rangeMs = displaySpan;
   var GRID_INTERVAL =
-    rangeMs <= 8 * 86400000
+    rangeMs <= 4 * 86400000
       ? 2 * 3600000
       : rangeMs <= 14 * 86400000
         ? 6 * 3600000
