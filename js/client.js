@@ -75,7 +75,7 @@ window.TrelloPowerUp.initialize(
     },
 
     "board-buttons": function (t, options) {
-      // Only show the stats button to board admins
+      // Only show buttons to board admins
       return Promise.all([t.board("memberships"), t.member("id")]).then(
         function (results) {
           var memberships = results[0].memberships || [];
@@ -94,6 +94,17 @@ window.TrelloPowerUp.initialize(
                 return t.modal({
                   title: "Project Statistics",
                   url: t.signUrl("./stats.html"),
+                  fullscreen: true,
+                });
+              },
+            },
+            {
+              icon: "https://img.icons8.com/ios-glyphs/30/737A8C/timeline.png",
+              text: "Time Chart",
+              callback: function (t) {
+                return t.modal({
+                  title: "Time Chart",
+                  url: t.signUrl("./gantt.html"),
                   fullscreen: true,
                 });
               },

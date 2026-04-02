@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="./css/gantt.css" />
+    <script src="https://p.trellocdn.com/power-up.min.js"></script>
+  </head>
+  <body>
+    <!-- Loading -->
+    <div id="loading" class="loading-screen">
+      <div class="spinner"></div>
+      <p id="loading-msg">Loading time data…</p>
+    </div>
+
+    <!-- App -->
+    <div id="app" class="app-wrap hidden">
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <label class="toolbar-label">From</label>
+          <input type="date" id="date-from" class="dp-date" />
+          <label class="toolbar-label">To</label>
+          <input type="date" id="date-to" class="dp-date" />
+          <button id="apply-filter" class="btn btn-primary">Apply</button>
+          <button id="reset-filter" class="btn btn-secondary">All time</button>
+        </div>
+        <div class="toolbar-right">
+          <span class="toolbar-label">Group by</span>
+          <div class="toggle-group">
+            <button class="toggle-btn active" id="btn-group-member">
+              Member
+            </button>
+            <button class="toggle-btn" id="btn-group-card">Card</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div id="legend" class="legend"></div>
+
+      <!-- Gantt container -->
+      <div class="gantt-container">
+        <div id="gantt-wrap" class="gantt-scroll">
+          <div id="gantt-inner"></div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="empty-state hidden">
+        <div class="empty-icon">📭</div>
+        <div class="empty-title">No time entries found for this range.</div>
+        <div class="empty-sub">
+          Start the timer on some cards, or widen the date filter.
+        </div>
+      </div>
+    </div>
+
+    <!-- Tooltip -->
+    <div id="tooltip" class="gantt-tooltip hidden"></div>
+
+    <script src="./js/gantt.js"></script>
+  </body>
+</html>
