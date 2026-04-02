@@ -212,6 +212,19 @@ body.dark-mode {
   color: #5e6c84;
   cursor: pointer;
   user-select: none;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  padding: 3px 10px 3px 7px;
+  transition:
+    opacity 0.15s,
+    border-color 0.15s,
+    background 0.15s;
+}
+.legend-item:hover {
+  border-color: currentColor;
+}
+.legend-item.is-off {
+  opacity: 0.35;
 }
 .legend-dot {
   width: 12px;
@@ -435,6 +448,29 @@ body.dark-mode {
   }
 }
 
+/* ── Weekend shading ── */
+.gantt-weekend-shade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.04);
+  pointer-events: none;
+  z-index: 0;
+}
+.dark-mode .gantt-weekend-shade {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Weekend toggle button active state */
+#btn-weekends.active {
+  background: #0079bf;
+  color: #fff;
+}
+.dark-mode #btn-weekends.active {
+  background: #0098ff;
+  color: #fff;
+}
+
 /* ── Empty state ── */
 .empty-state {
   text-align: center;
@@ -480,23 +516,6 @@ body.dark-mode {
   color: #a8bace;
   font-size: 13px;
   display: block;
-}
-
-/* ── Interactive legend ── */
-.legend-item {
-  border: 2px solid transparent;
-  border-radius: 20px;
-  padding: 3px 10px 3px 7px;
-  transition:
-    opacity 0.15s,
-    border-color 0.15s,
-    background 0.15s;
-}
-.legend-item:hover {
-  border-color: currentColor;
-}
-.legend-item.is-off {
-  opacity: 0.35;
 }
 
 .hidden {

@@ -22,6 +22,7 @@ var groupBy = "member"; // "member" | "card"
 var dateFrom = null;
 var dateTo = null;
 var hiddenMembers = {}; // memberKey → true when filtered out
+var hideWeekends = false; // when true, weekend time is collapsed from the timeline
 
 // ── Boot ──
 t.render(function () {
@@ -130,7 +131,6 @@ function fetchAllPowerUpData(cardIds, total) {
 function toInputDate(d) {
   return d.toISOString().slice(0, 10);
 }
-
 function setPickerDate(id, date) {
   document.getElementById("date-" + id).value = toInputDate(date);
 }
@@ -140,7 +140,6 @@ function getPickerDate(id) {
   var p = val.split("-");
   return new Date(+p[0], +p[1] - 1, +p[2]);
 }
-
 function initDateDefaults() {
   var now = new Date();
   var from = new Date(now);
@@ -152,10 +151,101 @@ function initDateDefaults() {
 }
 
 // ─────────────────────────────────────────────
+// WEEKEND COMPRESSION
+// ─────────────────────────────────────────────
+// When hideWeekends=true we build a mapping from real timestamps to
+// "display positions" that skip Saturday/Sunday entirely.
+// A "weekend block" is midnight Sat → midnight Mon (local time).
+
+function isWeekendMs(ts) {
+  var d = new Date(ts);
+  var day = d.getDay(); // 0=Sun, 6=Sat
+  return day === 0 || day === 6;
+}
+
+// Returns start-of-day (local midnight) for a timestamp
+function dayStart(ts) {
+  var d = new Date(ts);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
+// Build an array of weekend blocks {start, end} (ms) within [minT, maxT]
+function getWeekendBlocks(minT, maxT) {
+  var blocks = [];
+  // Walk day by day
+  var cursor = dayStart(minT);
+  while (cursor <= maxT) {
+    var d = new Date(cursor);
+    var day = d.getDay();
+    if (day === 6) {
+      // Saturday — block runs Sat 00:00 → Mon 00:00
+      var blockStart = cursor;
+      var blockEnd = cursor + 2 * 86400000; // +2 days = Monday midnight
+      blocks.push({ start: blockStart, end: blockEnd });
+      cursor = blockEnd;
+    } else {
+      cursor += 86400000;
+    }
+  }
+  return blocks;
+}
+
+// Convert a real timestamp to a display-axis position in [0, displaySpan]
+// by subtracting the total weekend duration that falls before ts.
+function buildTimeMapper(minT, maxT) {
+  if (!hideWeekends) {
+    var span = maxT - minT;
+    return {
+      toDisplay: function (ts) {
+        return ts - minT;
+      },
+      displaySpan: span,
+      weekendBlocks: [],
+    };
+  }
+
+  var blocks = getWeekendBlocks(minT, maxT);
+  // Clamp blocks to [minT, maxT]
+  var clampedBlocks = blocks
+    .map(function (b) {
+      return { start: Math.max(b.start, minT), end: Math.min(b.end, maxT) };
+    })
+    .filter(function (b) {
+      return b.end > b.start;
+    });
+
+  var totalWeekend = clampedBlocks.reduce(function (acc, b) {
+    return acc + (b.end - b.start);
+  }, 0);
+
+  var displaySpan = maxT - minT - totalWeekend;
+  if (displaySpan <= 0) displaySpan = maxT - minT; // fallback: all weekend
+
+  function toDisplay(ts) {
+    var skipped = 0;
+    for (var i = 0; i < clampedBlocks.length; i++) {
+      var b = clampedBlocks[i];
+      if (ts <= b.start) break;
+      if (ts >= b.end) {
+        skipped += b.end - b.start;
+      } else {
+        skipped += ts - b.start;
+      }
+    }
+    return ts - minT - skipped;
+  }
+
+  return {
+    toDisplay: toDisplay,
+    displaySpan: displaySpan,
+    weekendBlocks: clampedBlocks,
+  };
+}
+
+// ─────────────────────────────────────────────
 // FILTER
 // ─────────────────────────────────────────────
 function filteredSessions() {
-  // Returns a flat array of session objects with card info attached
   var from = dateFrom ? dateFrom.getTime() : null;
   var to = dateTo
     ? new Date(
@@ -176,7 +266,6 @@ function filteredSessions() {
       var e = new Date(entry.end).getTime();
       if (from && e < from) return;
       if (to && s > to) return;
-      // Clamp to filter window
       var clampedStart = from ? Math.max(s, from) : s;
       var clampedEnd = to ? Math.min(e, to) : e;
       sessions.push({
@@ -190,7 +279,6 @@ function filteredSessions() {
       });
     });
 
-    // Live running session
     if (card.isRunning && card.startTime) {
       var s = card.startTime;
       var e = Date.now();
@@ -225,7 +313,6 @@ function render() {
   }
   document.getElementById("empty-state").classList.add("hidden");
 
-  // Time range for the whole chart
   var minT = Math.min.apply(
     null,
     sessions.map(function (s) {
@@ -238,29 +325,22 @@ function render() {
       return s.clampedEnd;
     }),
   );
-  // Add a small padding
   var pad = (maxT - minT) * 0.02 || 3600000;
   minT -= pad;
   maxT += pad;
-  var totalSpan = maxT - minT;
 
-  // Build colour map
+  // Build the time mapper (handles weekend compression)
+  var mapper = buildTimeMapper(minT, maxT);
+
   var colorMap = buildColorMap(sessions);
-
-  // Build legend
   renderLegend(colorMap);
-
-  // Group sessions
   var groups = buildGroups(sessions);
 
-  // Render
   var inner = document.getElementById("gantt-inner");
   inner.innerHTML = "";
 
-  // Header
-  inner.appendChild(buildHeader(minT, maxT));
+  inner.appendChild(buildHeader(minT, maxT, mapper));
 
-  // Rows — each group wrapped in a section div for filter hiding
   groups.forEach(function (group) {
     var section = document.createElement("div");
     section.className = "gantt-group-section";
@@ -278,22 +358,17 @@ function render() {
     section.appendChild(gh);
 
     group.rows.forEach(function (row) {
-      section.appendChild(buildRow(row, minT, totalSpan, colorMap));
+      section.appendChild(buildRow(row, minT, mapper, colorMap));
     });
 
     inner.appendChild(section);
   });
 
-  // Apply any active filters to the freshly rendered bars
   applyMemberFilter();
-
   wireTooltip();
 }
 
 // ── Colour map ──
-// Colour is always keyed by the card's sorted member set (or card id in card mode).
-// This ensures a card shared by Alice+Bob always gets the same colour regardless
-// of the order members were added to the card.
 function cardColorKey(card) {
   if (groupBy === "card") return card.id;
   if (!card.members.length) return "__unassigned__";
@@ -304,7 +379,6 @@ function cardColorKey(card) {
     .sort()
     .join("+");
 }
-
 function buildColorMap(sessions) {
   var keys = [];
   sessions.forEach(function (s) {
@@ -317,14 +391,11 @@ function buildColorMap(sessions) {
   });
   return map;
 }
-
 function sessionColorKey(session) {
   return cardColorKey(session.card);
 }
 
 // ── Legend — interactive filter ──
-// hiddenMembers keys match individual member IDs (groupBy=member) or
-// cardColorKey values (groupBy=card). Clicking a legend pill toggles visibility.
 function renderLegend(colorMap) {
   var legend = document.getElementById("legend");
   legend.innerHTML = "";
@@ -369,9 +440,7 @@ function renderLegend(colorMap) {
       } else {
         hiddenMembers[k] = true;
       }
-      // Re-apply visibility to bars without full re-render (fast)
       applyMemberFilter();
-      // Update legend pill state
       this.classList.toggle("is-off", !!hiddenMembers[k]);
       this.title = hiddenMembers[k] ? "Click to show" : "Click to hide";
     });
@@ -380,13 +449,11 @@ function renderLegend(colorMap) {
   });
 }
 
-// Show/hide bars based on hiddenMembers without rebuilding the DOM
 function applyMemberFilter() {
   document.querySelectorAll(".gantt-bar").forEach(function (bar) {
     var key = bar.dataset.filterKey;
     bar.style.display = key && hiddenMembers[key] ? "none" : "";
   });
-  // Also hide/show group sections and rows that become fully empty
   document.querySelectorAll(".gantt-group-section").forEach(function (section) {
     var anyVisible = false;
     section.querySelectorAll(".gantt-bar").forEach(function (bar) {
@@ -397,10 +464,6 @@ function applyMemberFilter() {
 }
 
 // ── Groups ──
-// Group by member: one section per individual member; cards shared by multiple
-//   members appear under each of them, but always as ONE row with ALL sessions.
-// Group by card: one section per card, all sessions on one row.
-// In both modes a card occupies exactly one row — bars are never split.
 function buildGroups(sessions) {
   var groupMap = {};
   var groupOrder = [];
@@ -424,7 +487,6 @@ function buildGroups(sessions) {
   }
 
   if (groupBy === "member") {
-    // One section per individual member
     sessions.forEach(function (session) {
       var memberList = session.card.members.length
         ? session.card.members
@@ -444,7 +506,6 @@ function buildGroups(sessions) {
           groupOrder.push(gKey);
         }
 
-        // One row per card inside this member's section — all sessions together
         var rowKey = session.card.id;
         if (!groupMap[gKey].rowMap[rowKey]) {
           groupMap[gKey].rowMap[rowKey] = {
@@ -455,7 +516,6 @@ function buildGroups(sessions) {
             sessions: [],
           };
         }
-        // Deduplicate: same session can appear via multiple members
         var already = groupMap[gKey].rowMap[rowKey].sessions.some(function (s) {
           return s.start === session.start && s.end === session.end;
         });
@@ -463,10 +523,8 @@ function buildGroups(sessions) {
       });
     });
   } else {
-    // One section (and one row) per card
     sessions.forEach(function (session) {
       var gKey = session.card.id;
-
       if (!groupMap[gKey]) {
         groupMap[gKey] = {
           key: gKey,
@@ -476,7 +534,6 @@ function buildGroups(sessions) {
         };
         groupOrder.push(gKey);
       }
-
       if (!groupMap[gKey].rowMap[gKey]) {
         groupMap[gKey].rowMap[gKey] = {
           key: gKey,
@@ -504,8 +561,7 @@ function buildGroups(sessions) {
 }
 
 // ── Header ──
-function buildHeader(minT, maxT) {
-  var span = maxT - minT;
+function buildHeader(minT, maxT, mapper) {
   var header = document.createElement("div");
   header.className = "gantt-header";
 
@@ -517,7 +573,28 @@ function buildHeader(minT, maxT) {
   var tl = document.createElement("div");
   tl.className = "gantt-timeline-header";
 
-  // Decide tick interval
+  var displaySpan = mapper.displaySpan;
+
+  // Weekend shading bands in header
+  if (hideWeekends === false) {
+    // Show subtle weekend shading when weekends ARE visible
+    var wBlocks = getWeekendBlocks(minT, maxT);
+    wBlocks.forEach(function (b) {
+      var bs = Math.max(b.start, minT);
+      var be = Math.min(b.end, maxT);
+      if (be <= bs) return;
+      var leftPct = (mapper.toDisplay(bs) / displaySpan) * 100;
+      var widthPct =
+        ((mapper.toDisplay(be) - mapper.toDisplay(bs)) / displaySpan) * 100;
+      var shade = document.createElement("div");
+      shade.className = "gantt-weekend-shade";
+      shade.style.left = leftPct + "%";
+      shade.style.width = widthPct + "%";
+      tl.appendChild(shade);
+    });
+  }
+
+  // Tick marks
   var intervals = [
     60 * 1000,
     5 * 60 * 1000,
@@ -531,16 +608,20 @@ function buildHeader(minT, maxT) {
     2 * 86400 * 1000,
     7 * 86400 * 1000,
   ];
-  var TARGET_TICKS = 8;
+  var realSpan = maxT - minT;
   var interval =
     intervals.find(function (iv) {
-      return span / iv <= TARGET_TICKS * 2;
+      return realSpan / iv <= 16;
     }) || 7 * 86400 * 1000;
-
-  // Snap first tick to interval boundary
   var firstTick = Math.ceil(minT / interval) * interval;
+
   for (var ts = firstTick; ts <= maxT; ts += interval) {
-    var pct = ((ts - minT) / span) * 100;
+    // Skip ticks that fall inside a hidden weekend block
+    if (hideWeekends && isWeekendMs(ts)) continue;
+
+    var dispPos = mapper.toDisplay(ts);
+    var pct = (dispPos / displaySpan) * 100;
+
     var tick = document.createElement("div");
     tick.className = "gantt-tick";
     tick.style.left = pct + "%";
@@ -563,14 +644,12 @@ function buildHeader(minT, maxT) {
 
 function formatTickLabel(d, interval) {
   if (interval < 3600000) {
-    // sub-hour: show time only
     return d.toLocaleTimeString(navigator.language, {
       hour: "2-digit",
       minute: "2-digit",
     });
   }
   if (interval < 86400000) {
-    // hours: date + time
     return (
       d.toLocaleDateString(navigator.language, {
         month: "short",
@@ -583,7 +662,6 @@ function formatTickLabel(d, interval) {
       })
     );
   }
-  // days / weeks
   return d.toLocaleDateString(navigator.language, {
     month: "short",
     day: "numeric",
@@ -591,7 +669,7 @@ function formatTickLabel(d, interval) {
 }
 
 // ── Row ──
-function buildRow(row, minT, totalSpan, colorMap) {
+function buildRow(row, minT, mapper, colorMap) {
   var rowEl = document.createElement("div");
   rowEl.className = "gantt-row";
 
@@ -607,83 +685,154 @@ function buildRow(row, minT, totalSpan, colorMap) {
 
   var tlEl = document.createElement("div");
   tlEl.className = "gantt-row-timeline";
+  var displaySpan = mapper.displaySpan;
 
-  // Grid lines — reuse same tick positions
-  var span = totalSpan;
-  var intervals = [
-    60 * 1000,
-    5 * 60 * 1000,
-    15 * 60 * 1000,
-    30 * 60 * 1000,
-    3600 * 1000,
-    3 * 3600 * 1000,
-    6 * 3600 * 1000,
-    12 * 3600 * 1000,
-    86400 * 1000,
-    2 * 86400 * 1000,
-    7 * 86400 * 1000,
-  ];
-  var interval =
-    intervals.find(function (iv) {
-      return span / iv <= 16;
-    }) || 7 * 86400 * 1000;
-  var firstTick = Math.ceil(minT / interval) * interval;
-  for (var ts = firstTick; ts <= minT + totalSpan; ts += interval) {
+  // Weekend shading bands on each row
+  if (!hideWeekends) {
+    var maxT = minT + displaySpan; // approximate; good enough for shading
+    var wBlocks = getWeekendBlocks(
+      minT,
+      minT + displaySpan / (1 - 0.04) + 86400000 * 2,
+    );
+    wBlocks.forEach(function (b) {
+      var bs = Math.max(b.start, minT);
+      var be = Math.min(b.end, minT + displaySpan / 0.96 + 86400000); // rough maxT
+      if (be <= bs) return;
+      var ld = mapper.toDisplay(bs);
+      var rd = mapper.toDisplay(be);
+      if (rd <= 0 || ld >= displaySpan) return;
+      var leftPct = (ld / displaySpan) * 100;
+      var widthPct = ((rd - ld) / displaySpan) * 100;
+      var shade = document.createElement("div");
+      shade.className = "gantt-weekend-shade";
+      shade.style.left = leftPct + "%";
+      shade.style.width = widthPct + "%";
+      tlEl.appendChild(shade);
+    });
+  }
+
+  // Grid lines — 2h when range ≤ 4 days, 6h up to 2 weeks, daily beyond that.
+  // This keeps lines useful at short ranges without flooding wide views.
+  var rangeMs = displaySpan;
+  var GRID_INTERVAL =
+    rangeMs <= 4 * 86400000
+      ? 2 * 3600000 // ≤4 days  → every 2h
+      : rangeMs <= 14 * 86400000
+        ? 6 * 3600000 // ≤2 weeks → every 6h
+        : 86400000; // wider    → daily
+  var firstGrid = Math.ceil(minT / GRID_INTERVAL) * GRID_INTERVAL;
+  for (
+    var ts = firstGrid;
+    ts <= minT + displaySpan * 1.1;
+    ts += GRID_INTERVAL
+  ) {
+    if (hideWeekends && isWeekendMs(ts)) continue;
+    var dispPos = mapper.toDisplay(ts);
+    var pct = (dispPos / displaySpan) * 100;
+    if (pct < 0 || pct > 100) continue;
     var gl = document.createElement("div");
     gl.className = "gantt-gridline";
-    gl.style.left = ((ts - minT) / totalSpan) * 100 + "%";
+    gl.style.left = pct + "%";
     tlEl.appendChild(gl);
   }
 
-  // Bars
+  // Bars — when hiding weekends, a session that spans a weekend gets split
   row.sessions.forEach(function (session) {
-    var leftPct = ((session.clampedStart - minT) / totalSpan) * 100;
-    var widthPct =
-      ((session.clampedEnd - session.clampedStart) / totalSpan) * 100;
-    if (widthPct < 0.05) widthPct = 0.05; // always visible
+    var bars = hideWeekends
+      ? splitSessionAtWeekends(session)
+      : [{ start: session.clampedStart, end: session.clampedEnd }];
 
-    var colorKey = sessionColorKey(session);
-    var color = colorMap[colorKey] || PALETTE[0];
+    bars.forEach(function (seg) {
+      var leftD = mapper.toDisplay(seg.start);
+      var rightD = mapper.toDisplay(seg.end);
+      var leftPct = (leftD / displaySpan) * 100;
+      var widthPct = ((rightD - leftD) / displaySpan) * 100;
+      if (widthPct < 0.05) widthPct = 0.05;
 
-    var bar = document.createElement("div");
-    bar.className =
-      "gantt-bar" + (session.isRunning ? " gantt-bar--running" : "");
-    bar.style.left = leftPct + "%";
-    bar.style.width = widthPct + "%";
-    bar.style.background = color;
-    bar.style.opacity = session.type === "manual" ? "0.7" : "1";
+      var colorKey = sessionColorKey(session);
+      var color = colorMap[colorKey] || PALETTE[0];
 
-    // Store tooltip data
-    bar.dataset.filterKey = sessionColorKey(session);
-    bar.dataset.cardName = session.card.name;
-    bar.dataset.listName = session.card.listName;
-    bar.dataset.members =
-      session.card.members
-        .map(function (m) {
-          return m.fullName || m.username;
-        })
-        .join(", ") || "Unassigned";
-    bar.dataset.start = new Date(session.start).toLocaleString(
-      navigator.language,
-      { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" },
-    );
-    bar.dataset.end = session.isRunning
-      ? "now (running)"
-      : new Date(session.end).toLocaleString(navigator.language, {
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-    bar.dataset.duration = fmtMs(session.end - session.start);
-    bar.dataset.type = session.type;
-    bar.dataset.running = session.isRunning ? "1" : "0";
+      var bar = document.createElement("div");
+      bar.className =
+        "gantt-bar" + (session.isRunning ? " gantt-bar--running" : "");
+      bar.style.left = leftPct + "%";
+      bar.style.width = widthPct + "%";
+      bar.style.background = color;
+      bar.style.opacity = session.type === "manual" ? "0.7" : "1";
 
-    tlEl.appendChild(bar);
+      bar.dataset.filterKey = sessionColorKey(session);
+      bar.dataset.cardName = session.card.name;
+      bar.dataset.listName = session.card.listName;
+      bar.dataset.members =
+        session.card.members
+          .map(function (m) {
+            return m.fullName || m.username;
+          })
+          .join(", ") || "Unassigned";
+      bar.dataset.start = new Date(session.start).toLocaleString(
+        navigator.language,
+        { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" },
+      );
+      bar.dataset.end = session.isRunning
+        ? "now (running)"
+        : new Date(session.end).toLocaleString(navigator.language, {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+      bar.dataset.duration = fmtMs(session.end - session.start);
+      bar.dataset.type = session.type;
+      bar.dataset.running = session.isRunning ? "1" : "0";
+
+      tlEl.appendChild(bar);
+    });
   });
 
   rowEl.appendChild(tlEl);
   return rowEl;
+}
+
+// Split a session into non-weekend segments (for hideWeekends mode)
+function splitSessionAtWeekends(session) {
+  var segments = [];
+  var cursor = session.clampedStart;
+  var end = session.clampedEnd;
+
+  while (cursor < end) {
+    var d = new Date(cursor);
+    var day = d.getDay();
+
+    if (day === 6 || day === 0) {
+      // Skip to next Monday midnight (or Sunday → Monday)
+      var daysToMon = day === 6 ? 2 : 1;
+      var nextMon = new Date(
+        d.getFullYear(),
+        d.getMonth(),
+        d.getDate() + daysToMon,
+      ).getTime();
+      cursor = Math.min(nextMon, end);
+      continue;
+    }
+
+    // Find end of this weekday stretch (next Saturday midnight)
+    var daysToSat = 6 - day;
+    var nextSat = new Date(
+      d.getFullYear(),
+      d.getMonth(),
+      d.getDate() + daysToSat,
+    ).getTime();
+    var segEnd = Math.min(nextSat, end);
+
+    if (segEnd > cursor) {
+      segments.push({ start: cursor, end: segEnd });
+    }
+    cursor = segEnd;
+  }
+
+  return segments.length
+    ? segments
+    : [{ start: session.clampedStart, end: session.clampedEnd }];
 }
 
 // ─────────────────────────────────────────────
@@ -719,9 +868,7 @@ function wireTooltip() {
       tooltip.classList.remove("hidden");
       positionTooltip(e);
     });
-
     bar.addEventListener("mousemove", positionTooltip);
-
     bar.addEventListener("mouseleave", function () {
       tooltip.classList.add("hidden");
     });
@@ -732,7 +879,6 @@ function positionTooltip(e) {
   var tooltip = document.getElementById("tooltip");
   var x = e.clientX + 14;
   var y = e.clientY + 14;
-  // Keep on screen
   if (x + 270 > window.innerWidth) x = e.clientX - 275;
   if (y + 150 > window.innerHeight) y = e.clientY - 140;
   tooltip.style.left = x + "px";
@@ -778,6 +924,15 @@ function wireControls() {
       hiddenMembers = {};
       this.classList.add("active");
       document.getElementById("btn-group-member").classList.remove("active");
+      render();
+    });
+
+  document
+    .getElementById("btn-weekends")
+    .addEventListener("click", function () {
+      hideWeekends = !hideWeekends;
+      this.classList.toggle("active", hideWeekends);
+      this.textContent = hideWeekends ? "Weekends hidden" : "Hide weekends";
       render();
     });
 }

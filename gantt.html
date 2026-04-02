@@ -6,13 +6,11 @@
     <script src="https://p.trellocdn.com/power-up.min.js"></script>
   </head>
   <body>
-    <!-- Loading -->
     <div id="loading" class="loading-screen">
       <div class="spinner"></div>
       <p id="loading-msg">Loading time data…</p>
     </div>
 
-    <!-- App -->
     <div id="app" class="app-wrap hidden">
       <!-- Toolbar -->
       <div class="toolbar">
@@ -23,6 +21,9 @@
           <input type="date" id="date-to" class="dp-date" />
           <button id="apply-filter" class="btn btn-primary">Apply</button>
           <button id="reset-filter" class="btn btn-secondary">All time</button>
+          <button id="btn-weekends" class="btn btn-secondary">
+            Hide weekends
+          </button>
         </div>
         <div class="toolbar-right">
           <span class="toolbar-label">Group by</span>
@@ -38,7 +39,7 @@
       <!-- Legend -->
       <div id="legend" class="legend"></div>
 
-      <!-- Gantt container -->
+      <!-- Gantt -->
       <div class="gantt-container">
         <div id="gantt-wrap" class="gantt-scroll">
           <div id="gantt-inner"></div>
@@ -55,9 +56,7 @@
       </div>
     </div>
 
-    <!-- Tooltip -->
     <div id="tooltip" class="gantt-tooltip hidden"></div>
-
     <script src="./js/gantt.js"></script>
   </body>
 </html>
